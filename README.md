@@ -23,28 +23,60 @@ C'est le second qui attribue la note.
 
 ## L'échelle de difficulté
 
-Sous le niveau 7, ce sont le **nombre d'indices** et le **goulot d'étranglement** qui classent.
-À partir du niveau 7, c'est le **plafond de technique** qui domine.
+Le niveau se lit sur la **visibilité** : la part moyenne des cases encore vides qui étaient
+immédiatement plaçables à chaque étape. Une grille qui offre à tout instant la moitié de son
+reliquat se remplit toute seule ; une grille qui n'en montre qu'un dixième se chasse.
 
-Le goulot d'étranglement est le nombre minimal de coups jouables simultanément rencontré au cours
-de la résolution. À technique identique, une grille qui n'offre parfois qu'un seul coup possible est
-bien plus difficile à percer qu'une grille qui en offre huit.
+Le **plafond de technique** ne sert qu'à *relever* le niveau : une grille qui force une technique
+exigeante ne peut pas être classée facile, même si elle paraît aérée par ailleurs.
 
-| Niv. | Nom | Plafond de technique | Indices | Goulot |
+| Niv. | Nom | Visibilité | Plancher imposé par la technique | Indices typiques |
 | --- | --- | --- | --- | --- |
-| 1 | Découverte | Dernière case | 55-62 | ≥ 8 coups |
-| 2 | Premiers pas | + Single caché (bloc) | 48-54 | ≥ 6 |
-| 3 | Facile | idem | 42-47 | ≥ 4 |
-| 4 | Facile + | + Single caché (ligne/colonne) | 38-43 | ≥ 3 |
-| 5 | Moyen | + Single nu | 34-38 | ≥ 2 |
-| 6 | Moyen + | idem | 31-35 | ≥ 1 |
-| 7 | Confirmé | + Candidats verrouillés | 29-33 | — |
-| 8 | Difficile | + Paires / triplets (nus et cachés) | 27-31 | — |
-| 9 | Expert | + X-Wing, XY-Wing | 24-29 | — |
-| 10 | Diabolique | Hors catalogue | 22-27 | — |
+| 1 | Découverte | ≥ 42 % | — | 50-58 |
+| 2 | Premiers pas | ≥ 36 % | — | 44-50 |
+| 3 | Facile | ≥ 30 % | — | 40-45 |
+| 4 | Facile + | ≥ 25 % | — | 36-41 |
+| 5 | Moyen | ≥ 21 % | Chiffre unique ligne/colonne | 33-37 |
+| 6 | Moyen + | ≥ 18 % | Case à candidat unique | 31-34 |
+| 7 | Confirmé | ≥ 16 % | Candidats verrouillés *(étape 7)* | 29-32 |
+| 8 | Difficile | ≥ 14 % | Paires / triplets *(étape 7)* | 27-30 |
+| 9 | Expert | < 14 % | X-Wing, XY-Wing *(étape 7)* | 25-28 |
+| 10 | Diabolique | — | Hors catalogue | 22-27 |
 
 Le niveau 10 ne se détecte pas par une technique supplémentaire : c'est le cas où **le catalogue est
 épuisé** sans que la grille soit résolue. Les *forcing chains* ne sont donc jamais implémentées.
+
+Les fourchettes d'indices sont indicatives, pas prescriptives : à nombre d'indices constant, la
+visibilité varie du simple au double d'une grille à l'autre. Le générateur creuse vers une
+fourchette, puis **classe et recommence** si le niveau obtenu n'est pas celui visé.
+
+### D'où viennent ces seuils
+
+Ils sont mesurés, pas devinés. `tools/calibrate.py` creuse un large échantillon de grilles sur toute
+la plage 22-58 indices et relève ce qui varie réellement avec la difficulté. Sur 4 000 grilles, deux
+des trois métriques prévues à l'origine n'ont pas survécu :
+
+- Le **goulot d'étranglement** — le minimum de coups jouables simultanément — vaut 1 sur la quasi
+  totalité des grilles, y compris les plus faciles : il existe presque toujours un moment où un seul
+  coup est sur la table. Métrique abandonnée.
+- Le **plafond de technique** sature. « Chiffre unique dans un bloc » est le plafond de grilles
+  allant de 22 à 58 indices : il ne peut donc pas séparer le bas de l'échelle. Conservé comme
+  plancher uniquement.
+
+La visibilité, elle, décroît proprement de 48 % à 54 indices jusqu'à 12 % à 23 indices, et conserve
+un écart d'un facteur deux entre quartiles **à nombre d'indices constant** — c'est ce qui distingue
+deux grilles semblables sur le papier et très différentes à résoudre.
+
+Les niveaux 7 à 10 reposent sur un terrain plus meuble : les techniques qui les définissent
+n'existent pas encore (étape 7), et toutes les grilles qui les exigent tombent pour l'instant dans
+le même panier « hors catalogue ». Leurs seuils seront remesurés à ce moment-là. Les niveaux 1 à 6
+sont ceux que l'échantillon établit vraiment.
+
+Reproduire les mesures :
+
+```bash
+uv run python tools/calibrate.py --per-floor 200 --out sample.csv
+```
 
 ## Décisions de conception
 

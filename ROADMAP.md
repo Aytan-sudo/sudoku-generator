@@ -42,7 +42,7 @@ ce que le générateur rencontrera aux niveaux visés.
 - [x] Journal de résolution : technique employée et coups disponibles à chaque étape
 - [x] Tests : isolement de chaque technique, non-régression de justesse sur 120 grilles tirées
 
-## Étape 3 — Classificateur
+## Étape 3 — Classificateur ✅
 
 > **Mesures de calibrage (72 grilles creusées, indices 24 à 55) — deux surprises :**
 >
@@ -56,12 +56,24 @@ ce que le générateur rencontrera aux niveaux visés.
 > En revanche la **moyenne de coups disponibles** s'étage proprement (1,88 à 7,20) et décroît avec
 > la difficulté. C'est elle qui doit porter le bas de l'échelle.
 
-- [ ] Métriques : plafond de technique, moyenne de coups disponibles, nb d'indices, nb d'étapes
-- [ ] Chercher un substitut au goulot : proportion d'étapes à un seul coup, ou médiane
-- [ ] `rating.py` — mappage des métriques vers l'échelle 1-10
-- [ ] Recalibrer les fourchettes d'indices du README sur les mesures réelles
-- [ ] Détection « hors catalogue » → niveau 10
-- [ ] Tests sur grilles de référence à niveau connu
+- [x] `tools/calibrate.py` — échantillonnage et mesures brutes en CSV
+- [x] Substitut au goulot trouvé : la **visibilité**, part moyenne des cases vides immédiatement
+      plaçables. Décroît de 48 % à 12 % sur la plage 22-58 indices, et garde un facteur deux entre
+      quartiles à indices constants
+- [x] Ajout de `remaining` au journal — sans quoi la moyenne de coups reste confondue avec le
+      nombre de cases restantes (non monotone : 3,95 à 60 indices, pic à 5,11 vers 50)
+- [x] `rating.py` — visibilité pour le niveau, plafond de technique comme plancher
+- [x] Détection « hors catalogue » → niveau 10
+- [x] Fourchettes du README recalibrées sur 4 000 grilles
+- [x] Tests : monotonie du niveau moyen, plancher de technique toujours respecté
+
+Médiane du niveau obtenu par nombre d'indices (60 grilles chacun) : **1** à 56 et 52 indices,
+**2** à 48-44, **3** à 41, **4** à 38-36, **5** à 34, **6** à 32, **8** à 30-28, **9** à 26,
+**10** à 24. La dispersion à indices constants reste large — d'où la boucle « classer et
+recommencer » de l'étape 4.
+
+> Réserve : les niveaux 7 à 9 proviennent aujourd'hui de la seule visibilité, les techniques qui
+> les définissent n'existant pas encore. Seuils à remesurer à l'étape 7.
 
 ## Étape 4 — Générateur
 

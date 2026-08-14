@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from sudoku.board import Board
+from sudoku.board import CELL_COUNT, Board
 from sudoku.techniques import (
     BY_KEY,
     CATALOGUE,
@@ -39,6 +39,15 @@ class SolveStep:
 
     applied: int
     """How many of them actually changed the grid."""
+
+    remaining: int
+    """Empty cells when the step began.
+
+    ``available`` alone is misleading: a nearly finished grid offers few moves
+    simply because few cells are left. Dividing by this gives the share of the
+    remaining work that was in plain sight, which compares across grids of very
+    different fill levels.
+    """
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,11 +103,12 @@ def solve_logically(
             found = technique.find(state)
             if not found:
                 continue
+            remaining = CELL_COUNT - state.board.givens
             try:
                 applied = sum(state.apply(deduction) for deduction in found)
             except ContradictionError:
                 return SolveLog(solved=False, steps=tuple(steps), board=state.board)
-            steps.append(SolveStep(technique.key, len(found), applied))
+            steps.append(SolveStep(technique.key, len(found), applied, remaining))
             # A technique that reports moves but changes nothing would spin the
             # loop forever; treat it as the end of the road.
             if applied == 0:
