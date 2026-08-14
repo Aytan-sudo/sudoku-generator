@@ -44,17 +44,16 @@ ce que le générateur rencontrera aux niveaux visés.
 
 ## Étape 3 — Classificateur ✅
 
-> **Mesures de calibrage (72 grilles creusées, indices 24 à 55) — deux surprises :**
+> **Calibrage sur 4 000 grilles — deux métriques sur trois écartées :**
 >
-> 1. **Le goulot d'étranglement ne discrimine rien.** Il vaut 1 sur 60 des 61 grilles résolues :
->    il existe presque toujours un moment où un seul coup est jouable. Métrique **abandonnée**
->    sous cette forme.
-> 2. **Le plafond de technique sature.** 48 grilles sur 72 plafonnent à « chiffre unique dans un
->    bloc », sur toute la plage 28-55 indices. Les niveaux 1 à 6 **ne peuvent donc pas** être
->    séparés par la technique : elle ne sert qu'à poser un plafond.
+> 1. **Le goulot d'étranglement ne discrimine rien.** Il vaut 1 sur la quasi totalité des grilles
+>    résolues, les plus faciles comprises : il existe presque toujours un moment où un seul coup
+>    est jouable. Métrique **abandonnée**.
+> 2. **Le plafond de technique sature.** « Chiffre unique dans un bloc » est le plafond de grilles
+>    de 22 à 58 indices. Les niveaux 1 à 6 **ne peuvent pas** être séparés par la technique : elle
+>    ne sert plus qu'à poser un **plancher**.
 >
-> En revanche la **moyenne de coups disponibles** s'étage proprement (1,88 à 7,20) et décroît avec
-> la difficulté. C'est elle qui doit porter le bas de l'échelle.
+> La **visibilité** les remplace. Voir la section « D'où viennent ces seuils » du README.
 
 - [x] `tools/calibrate.py` — échantillonnage et mesures brutes en CSV
 - [x] Substitut au goulot trouvé : la **visibilité**, part moyenne des cases vides immédiatement
@@ -80,7 +79,8 @@ recommencer » de l'étape 4.
 - [ ] Grille complète valide (backtracking, ordre des candidats mélangé)
 - [ ] Creusage avec vérification d'unicité à chaque retrait
 - [ ] Ciblage : refus des retraits qui franchissent le plafond de technique visé
-- [ ] Boucle de ciblage sur la fourchette d'indices et le goulot
+- [ ] Boucle « creuser, classer, recommencer » jusqu'à obtenir le niveau visé
+- [ ] Garde-fou sur le nombre d'essais, avec erreur claire si la cible est inatteignable
 - [ ] Reproductibilité par seed (`random.Random` explicite, jamais le `random` global)
 - [ ] Tests : niveau produit conforme à la cible, déterminisme de la seed
 
