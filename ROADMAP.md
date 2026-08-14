@@ -31,20 +31,35 @@ Mesures : **0,11 ms** pour tester l'unicité d'une grille classique, **0,37 ms**
 grille complète. Le pire cas connu (« Everest », Inkala 2012) monte à 54 ms — largement au-delà de
 ce que le générateur rencontrera aux niveaux visés.
 
-## Étape 2 — Techniques « singles » (niveaux 1 à 6)
+## Étape 2 — Techniques « singles » (niveaux 1 à 6) ✅
 
-- [ ] Dernière case d'une unité (*full house*)
-- [ ] Single caché dans un bloc (balayage / *cross-hatching*)
-- [ ] Single caché sur ligne / colonne
-- [ ] Single nu
-- [ ] Registre de techniques ordonné par coût, extensible
-- [ ] Solveur humain : boucle qui repart toujours de la technique la moins chère
-- [ ] Journal de résolution : technique employée et coups disponibles à chaque étape
+- [x] Dernière case d'une unité (*full house*)
+- [x] Single caché dans un bloc (balayage / *cross-hatching*)
+- [x] Single caché sur ligne / colonne
+- [x] Single nu
+- [x] Registre de techniques ordonné par coût, extensible
+- [x] Solveur humain : boucle qui repart toujours de la technique la moins chère
+- [x] Journal de résolution : technique employée et coups disponibles à chaque étape
+- [x] Tests : isolement de chaque technique, non-régression de justesse sur 120 grilles tirées
 
 ## Étape 3 — Classificateur
 
-- [ ] Métriques : plafond de technique, goulot d'étranglement, moyenne de choix, nb d'indices
+> **Mesures de calibrage (72 grilles creusées, indices 24 à 55) — deux surprises :**
+>
+> 1. **Le goulot d'étranglement ne discrimine rien.** Il vaut 1 sur 60 des 61 grilles résolues :
+>    il existe presque toujours un moment où un seul coup est jouable. Métrique **abandonnée**
+>    sous cette forme.
+> 2. **Le plafond de technique sature.** 48 grilles sur 72 plafonnent à « chiffre unique dans un
+>    bloc », sur toute la plage 28-55 indices. Les niveaux 1 à 6 **ne peuvent donc pas** être
+>    séparés par la technique : elle ne sert qu'à poser un plafond.
+>
+> En revanche la **moyenne de coups disponibles** s'étage proprement (1,88 à 7,20) et décroît avec
+> la difficulté. C'est elle qui doit porter le bas de l'échelle.
+
+- [ ] Métriques : plafond de technique, moyenne de coups disponibles, nb d'indices, nb d'étapes
+- [ ] Chercher un substitut au goulot : proportion d'étapes à un seul coup, ou médiane
 - [ ] `rating.py` — mappage des métriques vers l'échelle 1-10
+- [ ] Recalibrer les fourchettes d'indices du README sur les mesures réelles
 - [ ] Détection « hors catalogue » → niveau 10
 - [ ] Tests sur grilles de référence à niveau connu
 
