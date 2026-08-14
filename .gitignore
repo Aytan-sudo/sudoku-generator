@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+build/
+dist/
+
+# Environnements
+.venv/
+venv/
+
+# Outils
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Sorties générées
+*.pdf
+out/
+
+# macOS
+.DS_Store
+
+# Éditeurs
+.idea/
+.vscode/
