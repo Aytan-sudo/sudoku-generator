@@ -16,15 +16,20 @@ techniques avancées.
 - [x] Dépôt git + GitHub
 - [x] CI GitHub Actions (lint + typage + tests)
 
-## Étape 1 — Noyau
+## Étape 1 — Noyau ✅
 
-- [ ] `board.py` — représentation d'une grille en 81 cases (0 = vide)
-- [ ] Pré-calcul des 27 unités et des 20 *peers* de chaque case
-- [ ] Candidats en masques de bits (`int`, bits 1→9)
-- [ ] Parsing / sérialisation (chaîne de 81 caractères)
-- [ ] `solver.py` — backtracking à masques de bits
-- [ ] Comptage de solutions avec arrêt à 2 (test d'unicité)
-- [ ] Tests : grilles de référence résolues, unicité détectée correctement
+- [x] `board.py` — représentation d'une grille en 81 cases (0 = vide)
+- [x] Pré-calcul des 27 unités et des 20 *peers* de chaque case
+- [x] Candidats en masques de bits (`int`, bits 1→9)
+- [x] Parsing / sérialisation (chaîne de 81 caractères, espaces ignorés)
+- [x] `solver.py` — backtracking à masques de bits, heuristique MRV
+- [x] Comptage de solutions avec arrêt à 2 (test d'unicité)
+- [x] `complete_grid(rng)` — grille complète aléatoire reproductible
+- [x] Tests : grilles de référence résolues, unicité détectée correctement (48 tests)
+
+Mesures : **0,11 ms** pour tester l'unicité d'une grille classique, **0,37 ms** pour tirer une
+grille complète. Le pire cas connu (« Everest », Inkala 2012) monte à 54 ms — largement au-delà de
+ce que le générateur rencontrera aux niveaux visés.
 
 ## Étape 2 — Techniques « singles » (niveaux 1 à 6)
 
