@@ -114,11 +114,18 @@ Le centrage vertical des chiffres se fait sur l'**ascendante**, pas sur la haute
 dernière réserve la place d'un jambage qu'aucun chiffre n'a, et enfoncerait chaque chiffre d'environ
 un dixième de sa taille.
 
-## Étape 6 — CLI
+## Étape 6 — CLI ✅
 
-- [ ] `sudoku generate --niveau --nombre --seed --solutions -o`
-- [ ] Pages de solutions regroupées en fin de document
-- [ ] Messages d'erreur clairs (niveau hors bornes, cible inatteignable…)
+- [x] `sudoku generate --niveau --nombre --seed --solutions --format -o`
+- [x] Pages de solutions regroupées en fin de document
+- [x] `sudoku niveaux` — rappel de l'échelle et des fourchettes d'indices
+- [x] Récapitulatif après génération : identifiant, indices, visibilité, seed de chaque grille
+- [x] Création automatique des dossiers manquants, nom de fichier par défaut selon le format
+- [x] Messages d'erreur clairs (niveau hors bornes, cible inatteignable…)
+- [x] Tests : formats de sortie, nombre de pages, reproductibilité, refus des arguments invalides
+
+Options et messages en français — celui qui lance la commande est celui qui tend la feuille. Les
+noms de commandes restent en ASCII pour ne pas se battre avec le clavier.
 
 ## Étape 7 — Techniques avancées (niveaux 7 à 10)
 

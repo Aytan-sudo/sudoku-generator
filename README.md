@@ -98,10 +98,6 @@ uv sync
 
 ## Usage
 
-> Le code métier n'est pas encore écrit — voir [ROADMAP.md](ROADMAP.md) pour l'avancement.
-
-Interface visée :
-
 ```bash
 # Une grille de niveau 4
 uv run sudoku generate --niveau 4 -o grille.pdf
@@ -109,9 +105,27 @@ uv run sudoku generate --niveau 4 -o grille.pdf
 # Cinq grilles de niveau 6, avec les solutions, reproductibles
 uv run sudoku generate --niveau 6 --nombre 5 --seed 42 --solutions -o grilles.pdf
 
-# Un carnet de 20 grilles en rampe progressive du niveau 3 au niveau 6
-uv run sudoku carnet --de 3 --a 6 --nombre 20 -o carnet.pdf
+# Les grilles en texte, pour jeter un œil sans ouvrir de visionneuse
+uv run sudoku generate --niveau 3 --format texte -o grilles.txt
+
+# Rappel de l'échelle
+uv run sudoku niveaux
 ```
+
+La commande récapitule ce qu'elle a produit :
+
+```
+3 grilles de niveau 4 « Facile + » → grilles.pdf
+  n° 3cd0   38 indices   visibilité 28%   seed 2746317213
+  n° 9919   38 indices   visibilité 27%   seed 1181241943
+  n° f391   38 indices   visibilité 27%   seed 958682846
+```
+
+`--seed` rejoue un lot entier à l'identique. Chaque grille porte en plus **sa propre seed** en pied
+de page : elle peut être régénérée seule, indépendamment du lot dont elle est issue.
+
+Le carnet en rampe progressive (`sudoku carnet --de 3 --a 6 --nombre 20`) arrive à l'étape 8 —
+voir [ROADMAP.md](ROADMAP.md).
 
 ## Développement
 
