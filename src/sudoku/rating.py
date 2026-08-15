@@ -22,11 +22,17 @@ two grids that look alike on paper and feel nothing alike to solve.
 So the rating is: a level read off visibility, then raised if the technique
 ceiling demands it.
 
-Levels 7 to 10 rest on thinner ground for now. The techniques that define them do
-not exist yet (step 7 of ROADMAP.md), so grids needing them all land in the same
-"beyond the catalogue" bucket. Their thresholds are placeholders to be
-re-measured once that step lands; levels 1 to 6 are the ones the sample actually
-pins down.
+Re-measured once the advanced techniques landed. They rescued a good share of
+what used to be unsolvable — grids beyond the catalogue fell from 19% of the
+sample to 11% — and the scale stayed monotonic throughout, so the visibility
+thresholds were left alone.
+
+One finding is worth recording. The advanced techniques are seldom a grid's
+*ceiling*: across 2400 grids, locked candidates topped out 110 of them, XY-Wing
+41, and X-Wing exactly one. They fire far more often than that as contributing
+steps, but rarely as the hardest thing a grid demands. So levels 7 to 9 are still
+carried mostly by visibility, with the technique floor stepping in for the
+minority of grids that genuinely hinge on a wing or a locked pair.
 """
 
 from __future__ import annotations
@@ -76,11 +82,19 @@ CEILING_FLOOR: dict[str, int] = {
     "hidden_single_box": 1,
     "hidden_single_line": 5,
     "naked_single": 6,
+    "pointing": 7,
+    "claiming": 7,
+    "naked_pair": 8,
+    "hidden_pair": 8,
+    "naked_triple": 8,
+    "hidden_triple": 8,
+    "x_wing": 9,
+    "xy_wing": 9,
 }
 """Lowest level a grid may be rated, given the hardest technique it forced.
 
-Extended alongside the catalogue: step 7 adds locked candidates at 7, pairs and
-triples at 8, X-Wing and XY-Wing at 9.
+Kept in step with the catalogue — :func:`check_catalogue_is_covered` refuses to
+import if a technique is ever added without a floor.
 """
 
 

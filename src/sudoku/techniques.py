@@ -21,13 +21,17 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from enum import Enum
+from itertools import combinations
 
 from sudoku.board import (
+    BOX_OF,
     BOXES,
     CELL_COUNT,
+    COL_OF,
     COLS,
     DIGITS,
     PEERS,
+    ROW_OF,
     ROWS,
     UNITS,
     Board,
@@ -194,6 +198,193 @@ def find_naked_single(state: CandidateState) -> list[Deduction]:
     return _unique(found)
 
 
+# --- Locked candidates ------------------------------------------------------
+
+
+def _pointing(
+    state: CandidateState,
+    lines: Sequence[tuple[int, ...]],
+    line_of: Sequence[int],
+) -> list[Deduction]:
+    """A digit confined to one line *within a box* leaves that line elsewhere."""
+    found = []
+    for box_index, box in enumerate(BOXES):
+        for digit in DIGITS:
+            flag = bit(digit)
+            spots = [index for index in box if state.marks[index] & flag]
+            if len(spots) < 2:
+                continue
+            touched = {line_of[index] for index in spots}
+            if len(touched) != 1:
+                continue
+            for index in lines[touched.pop()]:
+                if BOX_OF[index] != box_index and state.marks[index] & flag:
+                    found.append(Deduction.eliminate(index, digit))
+    return found
+
+
+def _claiming(
+    state: CandidateState,
+    lines: Sequence[tuple[int, ...]],
+    line_of: Sequence[int],
+) -> list[Deduction]:
+    """A digit confined to one box *within a line* leaves that box elsewhere."""
+    found = []
+    for line_index, line in enumerate(lines):
+        for digit in DIGITS:
+            flag = bit(digit)
+            spots = [index for index in line if state.marks[index] & flag]
+            if len(spots) < 2:
+                continue
+            touched = {BOX_OF[index] for index in spots}
+            if len(touched) != 1:
+                continue
+            for index in BOXES[touched.pop()]:
+                if line_of[index] != line_index and state.marks[index] & flag:
+                    found.append(Deduction.eliminate(index, digit))
+    return found
+
+
+def find_pointing(state: CandidateState) -> list[Deduction]:
+    """The 6s in this box all sit on one row, so no other 6 fits that row."""
+    return _unique(_pointing(state, ROWS, ROW_OF) + _pointing(state, COLS, COL_OF))
+
+
+def find_claiming(state: CandidateState) -> list[Deduction]:
+    """The 6s on this row all sit in one box, so no other 6 fits that box."""
+    return _unique(_claiming(state, ROWS, ROW_OF) + _claiming(state, COLS, COL_OF))
+
+
+# --- Subsets ----------------------------------------------------------------
+
+
+def _naked_subset(state: CandidateState, size: int) -> list[Deduction]:
+    """``size`` cells sharing exactly ``size`` digits own them outright."""
+    found = []
+    for unit in UNITS:
+        usable = [index for index in unit if 2 <= state.marks[index].bit_count() <= size]
+        for combo in combinations(usable, size):
+            shared = 0
+            for index in combo:
+                shared |= state.marks[index]
+            if shared.bit_count() != size:
+                continue
+            for index in unit:
+                if index in combo:
+                    continue
+                for digit in digits_from_mask(state.marks[index] & shared):
+                    found.append(Deduction.eliminate(index, digit))
+    return _unique(found)
+
+
+def _hidden_subset(state: CandidateState, size: int) -> list[Deduction]:
+    """``size`` digits confined to exactly ``size`` cells evict everything else."""
+    found = []
+    for unit in UNITS:
+        spots = {
+            digit: [index for index in unit if state.marks[index] & bit(digit)] for digit in DIGITS
+        }
+        usable = [digit for digit in DIGITS if 2 <= len(spots[digit]) <= size]
+        for combo in combinations(usable, size):
+            cells: set[int] = set()
+            shared = 0
+            for digit in combo:
+                cells.update(spots[digit])
+                shared |= bit(digit)
+            if len(cells) != size:
+                continue
+            for index in cells:
+                for digit in digits_from_mask(state.marks[index] & ~shared):
+                    found.append(Deduction.eliminate(index, digit))
+    return _unique(found)
+
+
+def find_naked_pair(state: CandidateState) -> list[Deduction]:
+    """Two cells with the same two candidates: nobody else in the unit gets them."""
+    return _naked_subset(state, 2)
+
+
+def find_naked_triple(state: CandidateState) -> list[Deduction]:
+    """The same with three cells — harder to spot, as no cell need hold all three."""
+    return _naked_subset(state, 3)
+
+
+def find_hidden_pair(state: CandidateState) -> list[Deduction]:
+    """Two digits that fit only two cells: those cells hold nothing else."""
+    return _hidden_subset(state, 2)
+
+
+def find_hidden_triple(state: CandidateState) -> list[Deduction]:
+    """The same with three digits, buried among other candidates."""
+    return _hidden_subset(state, 3)
+
+
+# --- Fish and wings ---------------------------------------------------------
+
+
+def _x_wing(
+    state: CandidateState,
+    lines: Sequence[tuple[int, ...]],
+    line_of: Sequence[int],
+    cross: Sequence[tuple[int, ...]],
+    cross_of: Sequence[int],
+) -> list[Deduction]:
+    """Two lines where a digit fits the same two crossing lines, and only those."""
+    found = []
+    for digit in DIGITS:
+        flag = bit(digit)
+        pairs = []
+        for line_index, line in enumerate(lines):
+            spots = [index for index in line if state.marks[index] & flag]
+            if len(spots) == 2:
+                pairs.append((line_index, tuple(cross_of[index] for index in spots)))
+
+        for (first, columns), (second, others) in combinations(pairs, 2):
+            if columns != others:
+                continue
+            for column in columns:
+                for index in cross[column]:
+                    if line_of[index] not in (first, second) and state.marks[index] & flag:
+                        found.append(Deduction.eliminate(index, digit))
+    return found
+
+
+def find_x_wing(state: CandidateState) -> list[Deduction]:
+    """A rectangle of four cells that pins a digit to two lines at once."""
+    return _unique(
+        _x_wing(state, ROWS, ROW_OF, COLS, COL_OF) + _x_wing(state, COLS, COL_OF, ROWS, ROW_OF)
+    )
+
+
+def find_xy_wing(state: CandidateState) -> list[Deduction]:
+    """A pivot of two candidates and two wings that corner a third digit.
+
+    Whichever way the pivot falls, one wing is forced onto the shared digit — so
+    any cell seeing both wings cannot hold it.
+    """
+    found = []
+    bivalue = [index for index in range(CELL_COUNT) if state.marks[index].bit_count() == 2]
+
+    for pivot in bivalue:
+        pivot_mask = state.marks[pivot]
+        wings = [index for index in bivalue if index in PEERS[pivot]]
+        for left, right in combinations(wings, 2):
+            left_mask, right_mask = state.marks[left], state.marks[right]
+            shared = left_mask & right_mask & ~pivot_mask
+            if shared.bit_count() != 1:
+                continue
+            if left_mask | right_mask != pivot_mask | shared:
+                continue
+            # Each wing must take a different one of the pivot's two digits.
+            if (left_mask & pivot_mask) == (right_mask & pivot_mask):
+                continue
+            digit = digits_from_mask(shared)[0]
+            for index in PEERS[left] & PEERS[right]:
+                if index not in (pivot, left, right) and state.marks[index] & shared:
+                    found.append(Deduction.eliminate(index, digit))
+    return _unique(found)
+
+
 # --- Catalogue --------------------------------------------------------------
 
 
@@ -221,6 +412,14 @@ CATALOGUE: tuple[Technique, ...] = (
         find_hidden_single_line,
     ),
     Technique("naked_single", "Case à candidat unique", 40, find_naked_single),
+    Technique("pointing", "Candidats verrouillés (bloc vers ligne)", 50, find_pointing),
+    Technique("claiming", "Candidats verrouillés (ligne vers bloc)", 55, find_claiming),
+    Technique("naked_pair", "Paire nue", 60, find_naked_pair),
+    Technique("hidden_pair", "Paire cachée", 65, find_hidden_pair),
+    Technique("naked_triple", "Triplet nu", 70, find_naked_triple),
+    Technique("hidden_triple", "Triplet caché", 75, find_hidden_triple),
+    Technique("x_wing", "X-Wing", 80, find_x_wing),
+    Technique("xy_wing", "XY-Wing", 85, find_xy_wing),
 )
 """Every technique the human solver knows, cheapest first."""
 

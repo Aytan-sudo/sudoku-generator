@@ -185,13 +185,17 @@ def test_the_naked_single_is_not_reachable_more_cheaply() -> None:
 # --- Soundness --------------------------------------------------------------
 
 
-def test_every_technique_only_ever_proposes_the_true_digit() -> None:
-    """The property that matters: a technique must never place a wrong digit.
+def test_no_technique_ever_contradicts_the_solution() -> None:
+    """The property that matters, and the one that would fail silently.
+
+    A placement must name the right digit; an elimination must never strike off
+    the digit the solution needs. The second is the dangerous half: a wrong
+    elimination does not crash, it quietly makes the grid unsolvable.
 
     Complete grids are punched with holes at several densities and every
     technique is run on the result. A sound deduction holds in every solution of
-    a grid, and the grid we started from is one of them — so each proposed digit
-    must match it, whether or not the punched grid stayed unique.
+    a grid, and the grid we started from is one of them — so it must agree,
+    whether or not the punched grid stayed unique.
     """
     rng = random.Random(2026)
     for _ in range(40):
@@ -203,12 +207,17 @@ def test_every_technique_only_ever_proposes_the_true_digit() -> None:
             state = CandidateState.from_board(Board(cells))
             for technique in CATALOGUE:
                 for deduction in technique.find(state):
-                    assert deduction.action is Action.PLACE
-                    assert deduction.digit == solution[deduction.index], (
-                        f"{technique.key} propose {deduction.digit} "
-                        f"en case {deduction.index}, la solution y met "
-                        f"{solution[deduction.index]}"
-                    )
+                    truth = solution[deduction.index]
+                    if deduction.action is Action.PLACE:
+                        assert deduction.digit == truth, (
+                            f"{technique.key} pose {deduction.digit} en case "
+                            f"{deduction.index}, la solution y met {truth}"
+                        )
+                    else:
+                        assert deduction.digit != truth, (
+                            f"{technique.key} élimine {deduction.digit} de la case "
+                            f"{deduction.index}, où la solution le place"
+                        )
 
 
 # --- Catalogue --------------------------------------------------------------

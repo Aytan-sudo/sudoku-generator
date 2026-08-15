@@ -38,9 +38,9 @@ exigeante ne peut pas être classée facile, même si elle paraît aérée par a
 | 4 | Facile + | ≥ 25 % | — | 36-41 |
 | 5 | Moyen | ≥ 21 % | Chiffre unique ligne/colonne | 33-37 |
 | 6 | Moyen + | ≥ 18 % | Case à candidat unique | 31-34 |
-| 7 | Confirmé | ≥ 16 % | Candidats verrouillés *(étape 7)* | 29-32 |
-| 8 | Difficile | ≥ 14 % | Paires / triplets *(étape 7)* | 27-30 |
-| 9 | Expert | < 14 % | X-Wing, XY-Wing *(étape 7)* | 25-28 |
+| 7 | Confirmé | ≥ 16 % | Candidats verrouillés | 29-32 |
+| 8 | Difficile | ≥ 14 % | Paires / triplets, nus et cachés | 27-30 |
+| 9 | Expert | < 14 % | X-Wing, XY-Wing | 25-28 |
 | 10 | Diabolique | — | Hors catalogue | 22-27 |
 
 Le niveau 10 ne se détecte pas par une technique supplémentaire : c'est le cas où **le catalogue est
@@ -67,10 +67,16 @@ La visibilité, elle, décroît proprement de 48 % à 54 indices jusqu'à 12 % �
 un écart d'un facteur deux entre quartiles **à nombre d'indices constant** — c'est ce qui distingue
 deux grilles semblables sur le papier et très différentes à résoudre.
 
-Les niveaux 7 à 10 reposent sur un terrain plus meuble : les techniques qui les définissent
-n'existent pas encore (étape 7), et toutes les grilles qui les exigent tombent pour l'instant dans
-le même panier « hors catalogue ». Leurs seuils seront remesurés à ce moment-là. Les niveaux 1 à 6
-sont ceux que l'échantillon établit vraiment.
+Mesures refaites une fois les techniques avancées en place. Elles récupèrent une bonne part de ce
+qui était insoluble — les grilles hors catalogue passent de 19 % à 11 % de l'échantillon — et
+l'échelle reste monotone, si bien que les seuils de visibilité n'ont pas bougé.
+
+Un constat mérite d'être noté : les techniques avancées sont rarement le **plafond** d'une grille.
+Sur 2 400 grilles, les candidats verrouillés plafonnent 110 d'entre elles, le XY-Wing 41, et le
+X-Wing exactement une. Elles se déclenchent bien plus souvent que ça comme étapes intermédiaires,
+mais rarement comme la chose la plus dure qu'une grille exige. Les niveaux 7 à 9 restent donc
+portés surtout par la visibilité, le plancher de technique n'intervenant que pour la minorité de
+grilles qui tiennent vraiment à un wing ou à une paire verrouillée.
 
 Reproduire les mesures :
 

@@ -127,15 +127,34 @@ un dixième de sa taille.
 Options et messages en français — celui qui lance la commande est celui qui tend la feuille. Les
 noms de commandes restent en ASCII pour ne pas se battre avec le clavier.
 
-## Étape 7 — Techniques avancées (niveaux 7 à 10)
+## Étape 7 — Techniques avancées (niveaux 7 à 10) ✅
 
-- [ ] Candidats verrouillés — *pointing* et *claiming* (niveau 7)
-- [ ] Paires et triplets nus (niveau 8)
-- [ ] Paires et triplets cachés (niveau 8)
-- [ ] X-Wing (niveau 9)
-- [ ] XY-Wing (niveau 9)
-- [ ] Fixtures de test générées par le générateur lui-même, une par technique
-- [ ] Recalibrage des seuils du classificateur sur un échantillon
+- [x] Candidats verrouillés — *pointing* et *claiming* (niveau 7)
+- [x] Paires et triplets nus (niveau 8)
+- [x] Paires et triplets cachés (niveau 8)
+- [x] X-Wing (niveau 9)
+- [x] XY-Wing (niveau 9)
+- [x] `tools/find_fixtures.py` — une grille par technique, trouvée par recherche puis figée
+- [x] Recalibrage des seuils du classificateur sur 2 400 grilles
+- [x] Tests : justesse des éliminations, chaque technique indispensable à sa fixture
+
+Le catalogue passe de 4 à **12 techniques**. Elles produisent des **éliminations**, pas des
+placements — le chemin prévu dès l'étape 2 a servi sans qu'il faille toucher au solveur.
+
+Grilles hors catalogue : **19 % → 11 %** de l'échantillon. Médiane du niveau toujours monotone
+(1, 2, 3, 5, 5, 6, 8, 8, 9, 9 de 56 à 24 indices). Seuils de visibilité inchangés.
+
+> **Les techniques avancées sont rarement le plafond d'une grille.** Sur 2 400 grilles, les
+> candidats verrouillés plafonnent 110 d'entre elles, le XY-Wing 41, et le X-Wing **une seule**.
+> Elles se déclenchent bien plus souvent comme étapes intermédiaires. Les niveaux 7 à 9 restent
+> donc portés surtout par la visibilité.
+
+Le test qui compte : une élimination fausse ne plante pas, elle rend la grille silencieusement
+insoluble. 21 563 déductions confrontées à la solution connue, aucune fausse.
+
+Performance : génération inchangée aux niveaux 1 à 9 (2 à 21 ms de médiane). Le niveau 10 passe à
+47 ms de médiane, 406 ms au pire — il doit épuiser les douze techniques à chaque étape avant de
+conclure.
 
 ## Étape 8 — Carnet ✅
 
