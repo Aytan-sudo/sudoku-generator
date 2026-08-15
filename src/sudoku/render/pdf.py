@@ -25,7 +25,7 @@ from reportlab.pdfgen.canvas import Canvas
 from sudoku.board import CELL_COUNT, COL_OF, ROW_OF, SIZE, Board
 from sudoku.generator import Puzzle
 from sudoku.rating import LEVELS
-from sudoku.render.base import Renderer
+from sudoku.render.base import Cover, Renderer
 
 FONT = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
@@ -207,22 +207,68 @@ def draw_solution_pages(canvas: Canvas, puzzles: Sequence[Puzzle]) -> None:
             )
 
 
+def draw_cover_page(canvas: Canvas, cover: Cover, today: date) -> None:
+    """Front page of a booklet, with a line for the owner to claim it."""
+    # Sits a little above the geometric centre, where a title block reads as
+    # centred rather than as having slipped down the page.
+    canvas.setFont(FONT_BOLD, 30)
+    canvas.setFillGray(0)
+    canvas.drawCentredString(PAGE_WIDTH / 2, 182 * mm, cover.title)
+
+    if cover.subtitle:
+        canvas.setFont(FONT, 14)
+        canvas.setFillGray(0.35)
+        canvas.drawCentredString(PAGE_WIDTH / 2, 168 * mm, cover.subtitle)
+
+    canvas.setStrokeGray(0.55)
+    canvas.setLineWidth(0.8)
+    canvas.line(GRID_LEFT + 30 * mm, 160 * mm, GRID_LEFT + GRID_SIZE - 30 * mm, 160 * mm)
+
+    canvas.setFont(FONT, 14)
+    canvas.setFillGray(0.25)
+    canvas.setStrokeGray(0.55)
+    canvas.setLineWidth(0.6)
+    label = "Carnet de :"
+    label_x = GRID_LEFT + 30 * mm
+    canvas.drawString(label_x, 128 * mm, label)
+    canvas.line(
+        label_x + canvas.stringWidth(label, FONT, 14) + 4 * mm,
+        126.5 * mm,
+        GRID_LEFT + GRID_SIZE - 30 * mm,
+        126.5 * mm,
+    )
+
+    canvas.setFont(FONT, 9)
+    canvas.setFillGray(0.5)
+    canvas.drawCentredString(PAGE_WIDTH / 2, FOOTER_Y, f"{today:%d/%m/%Y}")
+
+
 class PdfRenderer(Renderer):
     """Writes an A4 booklet: one grid per page, solutions at the end."""
 
     def __init__(self, today: date | None = None) -> None:
         self.today = today or date.today()
 
-    def render(self, puzzles: Sequence[Puzzle], path: Path, *, solutions: bool = False) -> None:
+    def render(
+        self,
+        puzzles: Sequence[Puzzle],
+        path: Path,
+        *,
+        solutions: bool = False,
+        cover: Cover | None = None,
+    ) -> None:
         if not puzzles:
             raise ValueError("aucune grille à rendre")
 
         canvas = Canvas(str(path), pagesize=A4)
-        canvas.setTitle("Sudoku")
+        canvas.setTitle(cover.title if cover else "Sudoku")
         canvas.setSubject(f"{len(puzzles)} grille(s)")
 
+        if cover:
+            draw_cover_page(canvas, cover, self.today)
+
         for position, puzzle in enumerate(puzzles):
-            if position:
+            if position or cover:
                 canvas.showPage()
             draw_puzzle_page(canvas, puzzle, self.today)
 

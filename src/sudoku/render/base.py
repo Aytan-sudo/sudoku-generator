@@ -9,14 +9,30 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 from sudoku.generator import Puzzle
+
+
+@dataclass(frozen=True, slots=True)
+class Cover:
+    """Front page of a booklet — what it is, and whose it is."""
+
+    title: str
+    subtitle: str = ""
 
 
 class Renderer(ABC):
     """Writes a set of puzzles out in one particular format."""
 
     @abstractmethod
-    def render(self, puzzles: Sequence[Puzzle], path: Path, *, solutions: bool = False) -> None:
-        """Write ``puzzles`` to ``path``, optionally followed by their solutions."""
+    def render(
+        self,
+        puzzles: Sequence[Puzzle],
+        path: Path,
+        *,
+        solutions: bool = False,
+        cover: Cover | None = None,
+    ) -> None:
+        """Write ``puzzles`` to ``path``, optionally with a cover and solutions."""

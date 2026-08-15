@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import random
 import secrets
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sudoku.board import CELL_COUNT, Board
@@ -28,7 +29,15 @@ from sudoku.human import solve_logically
 from sudoku.rating import BY_NUMBER, LEVELS, Rating, rate
 from sudoku.solver import complete_grid, has_unique_solution
 
-__all__ = ["GenerationError", "Puzzle", "dig", "generate", "generate_many"]
+__all__ = [
+    "GenerationError",
+    "Puzzle",
+    "dig",
+    "generate",
+    "generate_many",
+    "generate_ramp",
+    "ramp",
+]
 
 MIN_GIVENS = 22
 """Below this, uniqueness almost never survives random digging."""
@@ -133,14 +142,12 @@ def generate(level: int, seed: int | None = None, max_attempts: int = 300) -> Pu
     )
 
 
-def generate_many(level: int, count: int, seed: int | None = None) -> list[Puzzle]:
-    """Return ``count`` distinct puzzles at ``level``.
+def _batch(levels: Sequence[int], seed: int | None) -> list[Puzzle]:
+    """Generate one puzzle per entry of ``levels``, all of them distinct.
 
     Each puzzle gets its own seed drawn from the master one, so a single seed
     reproduces the whole batch while every grid stays independently reproducible.
     """
-    if count < 1:
-        raise ValueError("count doit valoir au moins 1")
     if seed is None:
         seed = secrets.randbits(32)
 
@@ -148,11 +155,53 @@ def generate_many(level: int, count: int, seed: int | None = None) -> list[Puzzl
     puzzles: list[Puzzle] = []
     seen: set[str] = set()
 
-    while len(puzzles) < count:
-        puzzle = generate(level, seed=rng.randrange(2**32))
-        if puzzle.board.to_string() in seen:
-            continue
+    for level in levels:
+        while True:
+            puzzle = generate(level, seed=rng.randrange(2**32))
+            if puzzle.board.to_string() not in seen:
+                break
         seen.add(puzzle.board.to_string())
         puzzles.append(puzzle)
 
     return puzzles
+
+
+def generate_many(level: int, count: int, seed: int | None = None) -> list[Puzzle]:
+    """Return ``count`` distinct puzzles, all at ``level``."""
+    if count < 1:
+        raise ValueError("count doit valoir au moins 1")
+    return _batch([level] * count, seed)
+
+
+def ramp(start: int, end: int, count: int) -> list[int]:
+    """Spread ``count`` grids over the levels from ``start`` to ``end``.
+
+    A booklet that climbs suits a child better than a uniform block: the early
+    pages build confidence, the late ones stretch. Levels are shared out evenly,
+    any remainder going to the easier end — a booklet is a nicer place to start
+    slowly than to finish abruptly.
+    """
+    for level in (start, end):
+        if level not in BY_NUMBER:
+            raise ValueError(f"niveau {level} hors de 1-{len(LEVELS)}")
+    if start > end:
+        raise ValueError(f"le niveau de départ ({start}) dépasse celui d'arrivée ({end})")
+    if count < 1:
+        raise ValueError("count doit valoir au moins 1")
+
+    levels = list(range(start, end + 1))
+    if count <= len(levels):
+        # Too few grids to visit every level: sample the span evenly instead.
+        # Rounded half up rather than with round(), whose banker's rounding would
+        # quietly shift the middle of the span.
+        step = (len(levels) - 1) / max(count - 1, 1)
+        return [levels[int(position * step + 0.5)] for position in range(count)]
+
+    base, extra = divmod(count, len(levels))
+    shares = [base + (1 if position < extra else 0) for position in range(len(levels))]
+    return [level for level, share in zip(levels, shares, strict=True) for _ in range(share)]
+
+
+def generate_ramp(start: int, end: int, count: int, seed: int | None = None) -> list[Puzzle]:
+    """Return ``count`` distinct puzzles climbing from level ``start`` to ``end``."""
+    return _batch(ramp(start, end, count), seed)

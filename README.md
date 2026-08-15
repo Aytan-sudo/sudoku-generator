@@ -124,8 +124,18 @@ La commande récapitule ce qu'elle a produit :
 `--seed` rejoue un lot entier à l'identique. Chaque grille porte en plus **sa propre seed** en pied
 de page : elle peut être régénérée seule, indépendamment du lot dont elle est issue.
 
-Le carnet en rampe progressive (`sudoku carnet --de 3 --a 6 --nombre 20`) arrive à l'étape 8 —
-voir [ROADMAP.md](ROADMAP.md).
+### Carnets
+
+Un carnet monte en difficulté de page en page : les premières grilles mettent en confiance, les
+dernières font travailler.
+
+```bash
+uv run sudoku carnet --de 3 --a 6 --nombre 20 --seed 111 -o carnet.pdf
+```
+
+Il s'ouvre sur une page de garde avec une ligne « Carnet de : » à remplir, et se termine par les
+solutions. Deux carnets tirés avec des seeds différentes n'ont **aucune grille en commun** — de quoi
+en donner un à chaque enfant sans qu'ils tombent sur les mêmes.
 
 ## Développement
 

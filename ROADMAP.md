@@ -137,12 +137,21 @@ noms de commandes restent en ASCII pour ne pas se battre avec le clavier.
 - [ ] Fixtures de test générées par le générateur lui-même, une par technique
 - [ ] Recalibrage des seuils du classificateur sur un échantillon
 
-## Étape 8 — Carnet
+## Étape 8 — Carnet ✅
 
-- [ ] Fonction de rampe : répartir N grilles entre deux niveaux
-- [ ] `sudoku carnet --de --a --nombre -o`
-- [ ] Page de garde
-- [ ] Section solutions en fin de carnet
+- [x] Fonction de rampe : répartir N grilles entre deux niveaux
+- [x] `sudoku carnet --de --a --nombre --seed --titre -o`
+- [x] Page de garde avec ligne « Carnet de : » à remplir
+- [x] Section solutions en fin de carnet, activée par défaut
+- [x] Tests : monotonie de la rampe, effectifs par niveau, deux carnets sans grille commune
+
+Le reste d'une division inégale va au **bas** de l'échelle : mieux vaut s'attarder au début d'un
+carnet que d'en bâcler la fin. Quand les grilles sont moins nombreuses que les niveaux, la rampe
+échantillonne la plage au lieu de tronquer.
+
+Deux bugs attrapés par les tests : `--no-solutions` n'existait pas (seul le drapeau positif était
+déclaré, d'où l'option `--solutions/--sans-solutions`), et `round()` décalait le milieu de la plage
+par arrondi bancaire.
 
 ## Étape 9 — Finitions
 

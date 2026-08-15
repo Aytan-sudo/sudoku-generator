@@ -7,7 +7,7 @@ from pathlib import Path
 
 from sudoku.board import BOX_SIZE, SIZE, Board
 from sudoku.generator import Puzzle
-from sudoku.render.base import Renderer
+from sudoku.render.base import Cover, Renderer
 
 TOP = "┌───────┬───────┬───────┐"
 MIDDLE = "├───────┼───────┼───────┤"
@@ -47,8 +47,17 @@ def puzzle_to_text(puzzle: Puzzle, *, solution: bool = False) -> str:
 class TextRenderer(Renderer):
     """Writes the same booklet as plain text."""
 
-    def render(self, puzzles: Sequence[Puzzle], path: Path, *, solutions: bool = False) -> None:
+    def render(
+        self,
+        puzzles: Sequence[Puzzle],
+        path: Path,
+        *,
+        solutions: bool = False,
+        cover: Cover | None = None,
+    ) -> None:
         if not puzzles:
             raise ValueError("aucune grille à rendre")
         blocks = [puzzle_to_text(puzzle, solution=solutions) for puzzle in puzzles]
+        if cover:
+            blocks.insert(0, "\n".join(part for part in (cover.title, cover.subtitle) if part))
         path.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")
