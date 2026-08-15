@@ -5,7 +5,7 @@ import statistics
 
 import pytest
 
-from sudoku.board import Board
+from sudoku.board import SIZE, Board
 from sudoku.generator import dig
 from sudoku.human import solve_logically
 from sudoku.rating import (
@@ -148,3 +148,60 @@ def test_emptier_grids_rate_harder_on_average() -> None:
         by_floor.setdefault(floor, []).append(rating.level)
     averages = [statistics.fmean(by_floor[floor]) for floor in sorted(by_floor, reverse=True)]
     assert averages == sorted(averages), f"niveaux non croissants : {averages}"
+
+
+# --- Invariance -------------------------------------------------------------
+
+
+def relabelled(board: Board, rng: random.Random) -> Board:
+    """Return the same puzzle wearing a different costume.
+
+    Renaming the digits, permuting bands and stacks, permuting rows inside a
+    band and transposing all leave the logical problem untouched: every
+    deduction available before is available after. So the rating must not move.
+    A rating that wavered under these would be reading the accident of where the
+    digits landed rather than the structure of the grid.
+    """
+    digits = list(range(1, SIZE + 1))
+    rng.shuffle(digits)
+
+    def shuffled_lines() -> list[int]:
+        bands = [0, 1, 2]
+        rng.shuffle(bands)
+        order = []
+        for band in bands:
+            inner = [0, 1, 2]
+            rng.shuffle(inner)
+            order += [band * 3 + step for step in inner]
+        return order
+
+    rows, cols = shuffled_lines(), shuffled_lines()
+    cells = [
+        digits[board[row * SIZE + col] - 1] if board[row * SIZE + col] else 0
+        for row in rows
+        for col in cols
+    ]
+    twisted = Board(cells)
+    if rng.random() < 0.5:
+        twisted = Board([twisted[col * SIZE + row] for row in range(SIZE) for col in range(SIZE)])
+    return twisted
+
+
+def test_the_rating_survives_a_change_of_costume() -> None:
+    rng = random.Random(4242)
+    for floor in (50, 38, 30, 25):
+        original = dig(complete_grid(rng), rng, floor)
+        expected = rate(original)
+        for _ in range(8):
+            twin = rate(relabelled(original, rng))
+            assert twin.level == expected.level
+            assert twin.visibility == pytest.approx(expected.visibility)
+            assert twin.givens == expected.givens
+
+
+def test_a_relabelled_grid_is_still_a_proper_puzzle() -> None:
+    rng = random.Random(99)
+    original = dig(complete_grid(rng), rng, 32)
+    twin = relabelled(original, rng)
+    assert twin.is_valid()
+    assert twin.givens == original.givens
