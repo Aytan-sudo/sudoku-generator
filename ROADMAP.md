@@ -74,15 +74,23 @@ recommencer » de l'étape 4.
 > Réserve : les niveaux 7 à 9 proviennent aujourd'hui de la seule visibilité, les techniques qui
 > les définissent n'existant pas encore. Seuils à remesurer à l'étape 7.
 
-## Étape 4 — Générateur
+## Étape 4 — Générateur ✅
 
-- [ ] Grille complète valide (backtracking, ordre des candidats mélangé)
-- [ ] Creusage avec vérification d'unicité à chaque retrait
-- [ ] Ciblage : refus des retraits qui franchissent le plafond de technique visé
-- [ ] Boucle « creuser, classer, recommencer » jusqu'à obtenir le niveau visé
-- [ ] Garde-fou sur le nombre d'essais, avec erreur claire si la cible est inatteignable
-- [ ] Reproductibilité par seed (`random.Random` explicite, jamais le `random` global)
-- [ ] Tests : niveau produit conforme à la cible, déterminisme de la seed
+- [x] Grille complète valide (backtracking, ordre des candidats mélangé)
+- [x] Creusage avec vérification d'unicité à chaque retrait
+- [x] Boucle « creuser, classer, recommencer » jusqu'à obtenir le niveau visé
+- [x] Cible d'indices ajustée d'un cran à chaque échec, dans le sens du manque
+- [x] Garde-fou sur le nombre d'essais, avec erreur claire si la cible est inatteignable
+- [x] Reproductibilité par seed (`random.Random` explicite, jamais le `random` global)
+- [x] `generate_many` — lot de grilles distinctes, chacune rejouable seule
+- [x] Identifiant court et stable par grille, pour le pied de page
+- [x] Tests : niveau produit conforme à la cible pour les 10 niveaux, unicité, déterminisme
+
+Sur 400 grilles (40 par niveau) : **aucun échec**, médiane 2 à 28 ms, pire cas 163 ms.
+
+> Le contrôle du plafond de technique **à chaque retrait** a été envisagé puis écarté : il coûte une
+> résolution logique complète par retrait, soit une cinquantaine par grille, pour un taux
+> d'acceptation que la boucle d'essais atteint à un dixième du prix.
 
 ## Étape 5 — Rendu PDF ◄── **première impression utilisable**
 

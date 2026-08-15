@@ -5,7 +5,8 @@ import statistics
 
 import pytest
 
-from sudoku.board import CELL_COUNT, Board
+from sudoku.board import Board
+from sudoku.generator import dig
 from sudoku.human import solve_logically
 from sudoku.rating import (
     BY_NUMBER,
@@ -16,28 +17,9 @@ from sudoku.rating import (
     rate,
     visibility_of,
 )
-from sudoku.solver import complete_grid, has_unique_solution
+from sudoku.solver import complete_grid
 from sudoku.techniques import CATALOGUE
 from tests.grids import CLASSIC_PUZZLE, CLASSIC_SOLUTION, HARDEST_PUZZLE
-
-
-def dig(rng: random.Random, floor: int) -> Board:
-    """Remove cells while uniqueness holds, down to ``floor`` givens."""
-    board = complete_grid(rng)
-    order = list(range(CELL_COUNT))
-    rng.shuffle(order)
-    givens = CELL_COUNT
-    for index in order:
-        if givens <= floor:
-            break
-        kept = board[index]
-        board[index] = 0
-        if has_unique_solution(board):
-            givens -= 1
-        else:
-            board[index] = kept
-    return board
-
 
 # --- The scale --------------------------------------------------------------
 
@@ -133,7 +115,11 @@ def test_rating_does_not_mutate_the_grid() -> None:
 
 def sample() -> list[tuple[int, Rating]]:
     rng = random.Random(4242)
-    return [(floor, rate(dig(rng, floor))) for floor in (52, 44, 38, 34, 30, 25) for _ in range(8)]
+    return [
+        (floor, rate(dig(complete_grid(rng), rng, floor)))
+        for floor in (52, 44, 38, 34, 30, 25)
+        for _ in range(8)
+    ]
 
 
 def test_every_level_is_on_the_scale() -> None:

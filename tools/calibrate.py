@@ -32,9 +32,10 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from sudoku.board import CELL_COUNT, Board
+from sudoku.board import Board
+from sudoku.generator import dig
 from sudoku.human import SolveLog, solve_logically
-from sudoku.solver import complete_grid, has_unique_solution
+from sudoku.solver import complete_grid
 from sudoku.techniques import BY_KEY, CATALOGUE
 
 BEYOND = "beyond_catalogue"
@@ -80,24 +81,6 @@ class Measurement:
     share_hidden_single_box: float
     share_hidden_single_line: float
     share_naked_single: float
-
-
-def dig(rng: random.Random, floor: int) -> Board:
-    """Remove cells in random order while uniqueness holds, down to ``floor``."""
-    board = complete_grid(rng)
-    order = list(range(CELL_COUNT))
-    rng.shuffle(order)
-    givens = CELL_COUNT
-    for index in order:
-        if givens <= floor:
-            break
-        kept = board[index]
-        board[index] = 0
-        if has_unique_solution(board):
-            givens -= 1
-        else:
-            board[index] = kept
-    return board
 
 
 def measure(board: Board, log: SolveLog, floor: int) -> Measurement:
@@ -151,7 +134,7 @@ def collect(per_floor: int, seed: int) -> list[Measurement]:
     for position, floor in enumerate(FLOORS, start=1):
         floor_started = time.perf_counter()
         for _ in range(per_floor):
-            board = dig(rng, floor)
+            board = dig(complete_grid(rng), rng, floor)
             rows.append(measure(board, solve_logically(board), floor))
         print(
             f"  [{position:>2}/{len(FLOORS)}] plancher {floor:>2} indices — "
