@@ -195,9 +195,23 @@ fois. Sans lui, la ligne reste vierge.
 Deux carnets tirés avec des seeds différentes n'ont **aucune grille en commun** — de quoi en donner
 un à chaque enfant sans qu'ils tombent sur les mêmes.
 
-### Nommage des fichiers
+### Où atterrissent les fichiers
 
-Sans `-o`, le nom se construit tout seul : `carnet-<joueur>-<date>-<seed>-<empreinte>.pdf`.
+Tout est écrit dans **`out/`**, ignoré par git — ce sont des fichiers générés, et rien d'autre que
+la seed ne peut en ramener un une fois effacé. `--dossier` change la destination, `-o` impose un
+chemin précis et court-circuite le tout.
+
+Sans `-o`, le nom se construit tout seul :
+
+```
+out/carnet-zoe-20260815-111-ecae.pdf
+    ▲      ▲    ▲        ▲   ▲
+    │      │    │        │   └─ empreinte des grilles
+    │      │    │        └───── seed
+    │      │    └────────────── date
+    │      └─────────────────── joueur (si --joueur)
+    └────────────────────────── commande
+```
 
 La date et la seed disent d'où vient un fichier ; l'empreinte finale est un condensé des grilles
 elles-mêmes. Relancer deux fois la même commande retombe donc sur le **même nom** et réécrit un

@@ -204,7 +204,7 @@ def test_the_default_booklet_is_named_carnet(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     run("carnet", "--de", "3", "--a", "4", "-c", "4", "--seed", "12", "--joueur", "Zoé")
-    names = {path.name for path in tmp_path.iterdir()}
+    names = {path.name for path in (tmp_path / "out").iterdir()}
     assert len(names) == 2
     assert all(name.startswith("carnet-zoe-") and "12" in name for name in names)
     assert sum(name.endswith("-solutions.pdf") for name in names) == 1

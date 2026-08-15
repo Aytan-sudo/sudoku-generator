@@ -49,6 +49,14 @@ class Format(StrEnum):
 SUFFIX = {Format.pdf: ".pdf", Format.texte: ".txt"}
 RENDERERS: dict[Format, type[Renderer]] = {Format.pdf: PdfRenderer, Format.texte: TextRenderer}
 
+OUTPUT_DIR = Path("out")
+"""Where generated files land unless told otherwise.
+
+Keeping them out of the project root matters more than it looks: they are build
+output, git ignores them, and nothing but the seed can bring one back once it is
+gone. A folder of their own makes that plain.
+"""
+
 
 def _slug(text: str) -> str:
     """Reduce a name to something safe in a filename, accents included."""
@@ -118,7 +126,13 @@ def generate(
     joueur: Annotated[
         str | None, typer.Option("--joueur", "-j", help="Nom inscrit sur les feuilles.")
     ] = None,
-    sortie: Annotated[Path | None, typer.Option("--out", "-o", help="Fichier à écrire.")] = None,
+    sortie: Annotated[
+        Path | None,
+        typer.Option("--out", "-o", help="Fichier précis à écrire, dossier compris."),
+    ] = None,
+    dossier: Annotated[
+        Path, typer.Option("--dossier", "-d", help="Dossier de sortie.")
+    ] = OUTPUT_DIR,
     seed: Annotated[
         int | None,
         typer.Option("--seed", help="Rend le tirage reproductible. Tirée au hasard si omise."),
@@ -143,7 +157,7 @@ def generate(
         typer.secho(f"Échec de génération : {error}", fg=typer.colors.RED, err=True)
         raise typer.Exit(1) from error
 
-    destination = sortie or _default_path("sudokus", joueur, seed, puzzles, format_)
+    destination = sortie or dossier / _default_path("sudokus", joueur, seed, puzzles, format_)
     _write(puzzles, destination, format_, solutions=solutions, player=joueur)
 
     plural = "s" if len(puzzles) > 1 else ""
@@ -175,7 +189,13 @@ def carnet(
     joueur: Annotated[
         str | None, typer.Option("--joueur", "-j", help="Nom inscrit sur la garde et les feuilles.")
     ] = None,
-    sortie: Annotated[Path | None, typer.Option("--out", "-o", help="Fichier à écrire.")] = None,
+    sortie: Annotated[
+        Path | None,
+        typer.Option("--out", "-o", help="Fichier précis à écrire, dossier compris."),
+    ] = None,
+    dossier: Annotated[
+        Path, typer.Option("--dossier", "-d", help="Dossier de sortie.")
+    ] = OUTPUT_DIR,
     seed: Annotated[
         int | None,
         typer.Option("--seed", help="Rend le tirage reproductible. Tirée au hasard si omise."),
@@ -210,7 +230,7 @@ def carnet(
         typer.secho(f"Échec de génération : {error}", fg=typer.colors.RED, err=True)
         raise typer.Exit(1) from error
 
-    destination = sortie or _default_path("carnet", joueur, seed, puzzles, format_)
+    destination = sortie or dossier / _default_path("carnet", joueur, seed, puzzles, format_)
     cover = Cover(
         title=titre,
         subtitle=f"{nombre} grilles, du niveau {de} « {BY_NUMBER[de].name} »"

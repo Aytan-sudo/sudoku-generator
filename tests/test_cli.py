@@ -110,11 +110,40 @@ def test_missing_folders_are_created(tmp_path: Path) -> None:
     assert destination.exists()
 
 
+def outputs(root: Path) -> list[Path]:
+    """What landed in the output folder."""
+    return sorted((root / "out").iterdir())
+
+
+def test_generated_files_land_in_a_folder_of_their_own(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    run("generate", "-n", "1", "--seed", "1")
+    assert [path.name for path in tmp_path.iterdir()] == ["out"]
+    assert len(outputs(tmp_path)) == 1
+
+
+def test_the_folder_can_be_chosen(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    run("generate", "-n", "1", "--seed", "1", "--dossier", "grilles/aout")
+    assert len(list((tmp_path / "grilles" / "aout").iterdir())) == 1
+
+
+def test_an_explicit_out_bypasses_the_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    run("generate", "-n", "1", "--seed", "1", "-o", "ici.pdf")
+    assert (tmp_path / "ici.pdf").exists()
+    assert not (tmp_path / "out").exists()
+
+
 def test_default_names_follow_the_format(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     run("generate", "-n", "1", "--seed", "1")
     run("generate", "-n", "1", "--seed", "1", "--format", "texte")
-    assert [path.suffix for path in sorted(tmp_path.iterdir())] == [".pdf", ".txt"]
+    assert [path.suffix for path in outputs(tmp_path)] == [".pdf", ".txt"]
 
 
 def test_the_default_name_carries_date_and_seed(
@@ -122,7 +151,7 @@ def test_the_default_name_carries_date_and_seed(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     run("generate", "-n", "1", "--seed", "4242")
-    name = next(tmp_path.iterdir()).name
+    name = outputs(tmp_path)[0].name
     assert name.startswith("sudokus-")
     assert f"{date.today():%Y%m%d}" in name
     assert "4242" in name
@@ -135,7 +164,7 @@ def test_the_default_name_settles_on_the_content(
     monkeypatch.chdir(tmp_path)
     run("generate", "-n", "1", "--seed", "77")
     run("generate", "-n", "1", "--seed", "77")
-    assert len(list(tmp_path.iterdir())) == 1
+    assert len(outputs(tmp_path)) == 1
 
 
 def test_different_seeds_land_on_different_names(
@@ -144,7 +173,7 @@ def test_different_seeds_land_on_different_names(
     monkeypatch.chdir(tmp_path)
     run("generate", "-n", "1", "--seed", "1")
     run("generate", "-n", "1", "--seed", "2")
-    assert len(list(tmp_path.iterdir())) == 2
+    assert len(outputs(tmp_path)) == 2
 
 
 # --- The player -------------------------------------------------------------
@@ -170,7 +199,7 @@ def test_the_player_name_reaches_the_filename(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     run("generate", "-n", "1", "--seed", "3", "--joueur", "Camille")
-    assert next(tmp_path.iterdir()).name.startswith("sudokus-camille-")
+    assert outputs(tmp_path)[0].name.startswith("sudokus-camille-")
 
 
 def test_accents_and_spaces_are_stripped_from_the_filename(
@@ -178,7 +207,7 @@ def test_accents_and_spaces_are_stripped_from_the_filename(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     run("generate", "-n", "1", "--seed", "3", "--joueur", "Zoé Marie")
-    name = next(tmp_path.iterdir()).name
+    name = outputs(tmp_path)[0].name
     assert "zoe-marie" in name
     assert name.isascii()
 

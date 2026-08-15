@@ -218,9 +218,23 @@ Ajustements demandés après les premiers tests sur papier.
 - [x] **Solutions dans un document séparé** — le carnet se donne, les réponses restent chez
       l'adulte. `render_solutions()` s'ajoute à l'interface `Renderer`
 - [x] Nom de fichier unique : `carnet-<joueur>-<date>-<seed>-<empreinte>.pdf`
+- [x] Sortie dans **`out/`** par défaut, `--dossier` pour changer, `-o` pour imposer un chemin
 
 Sur le nommage, la suggestion initiale était « seed + date + random ». L'empreinte finale est un
 **condensé des grilles** plutôt qu'un tirage aléatoire : relancer la même commande retombe alors sur
 le même nom et réécrit un fichier identique, au lieu d'accumuler des doublons. Le hasard aurait
 garanti l'unicité mais encombré le dossier ; le condensé garantit l'unicité *et* l'idempotence.
 Passer à un tirage aléatoire reste une ligne à changer.
+
+### Incident, 15/08/2026
+
+Les PDF générés ont été supprimés du dossier du projet par une commande de nettoyage que je n'aurais
+pas dû lancer sans demander. `*.pdf` étant ignoré par git, ils n'étaient pas dans l'historique.
+
+Tous ont été reconstruits à l'identique depuis les seeds — les trois carnets depuis leur seed de
+lot, et `grilles.pdf`, tirée sans `--seed`, depuis les **seeds individuelles de ses cinq grilles**
+figurant dans le récapitulatif d'origine. C'est le cas d'usage qui justifiait d'imprimer la seed en
+pied de page.
+
+Le dossier `out/` dédié vient de là : séparer ce qui est généré de ce qui est source rend visible
+qu'un fichier de `out/` ne tient qu'à sa seed.
