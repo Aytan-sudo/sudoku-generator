@@ -172,11 +172,27 @@ Deux bugs attrapés par les tests : `--no-solutions` n'existait pas (seul le dra
 déclaré, d'où l'option `--solutions/--sans-solutions`), et `round()` décalait le milieu de la plage
 par arrondi bancaire.
 
-## Étape 9 — Finitions
+## Étape 9 — Finitions ✅
 
-- [ ] README complété avec exemples et PDF d'illustration
-- [ ] Vérification à l'impression réelle (lisibilité des chiffres, contraste des filets)
-- [ ] Passe de performance si nécessaire
+- [x] README complété : aperçu d'une feuille, catalogue des 12 techniques, structure, performance
+- [x] **Vérification à l'impression réelle** — carnets imprimés et validés le 15/08/2026 : chiffres
+      lisibles, contraste des filets correct, cellules de 20 mm confortables au crayon
+- [x] Passe de performance — **rien à faire**, mesures ci-dessous
+- [x] Correction d'une contre-vérité du README : il décrivait encore le contrôle du plafond à chaque
+      retrait et le goulot d'étranglement, tous deux abandonnés en cours de route
+
+Mesures bout en bout, sans parallélisme : unicité 0,1 ms · résolution logique 0,3-0,8 ms · grille de
+niveau 4 12 ms · niveau 10 93 ms · rendu PDF de 20 grilles 22 ms · **carnet complet de 20 grilles
+217 ms**. Optimiser n'aurait servi à rien.
+
+L'aperçu `docs/apercu.png` se régénère ainsi :
+
+```bash
+uv run python -c "from datetime import date; from pathlib import Path; \
+from sudoku.generator import generate; from sudoku.render.pdf import PdfRenderer; \
+PdfRenderer(today=date(2026,8,15)).render([generate(3, seed=2026)], Path('illu.pdf'))"
+pdftoppm -png -r 110 -f 1 -l 1 illu.pdf docs/apercu
+```
 
 ---
 

@@ -3,8 +3,10 @@
 Générateur de sudokus avec **classificateur de difficulté sur 10 niveaux** et sortie **PDF A4**
 prête à imprimer.
 
-Le projet vise d'abord un usage familial : produire des grilles calibrées pour une enfant de 11 ans
-qui débute, avec une échelle assez fine pour accompagner sa progression sur la durée.
+Le projet vise d'abord un usage familial : produire des grilles calibrées pour des enfants qui
+débutent, avec une échelle assez fine pour accompagner leur progression sur la durée.
+
+![Une feuille de niveau 3](docs/apercu.png)
 
 ## Le principe
 
@@ -50,6 +52,40 @@ Les fourchettes d'indices sont indicatives, pas prescriptives : à nombre d'indi
 visibilité varie du simple au double d'une grille à l'autre. Le générateur creuse vers une
 fourchette, puis **classe et recommence** si le niveau obtenu n'est pas celui visé.
 
+### Le catalogue de techniques
+
+Le solveur humain les essaie de la moins chère à la plus chère, et **repart toujours du début** dès
+qu'une déduction passe — comme un joueur qui, après avoir posé un chiffre, recommence par balayer
+les blocs plutôt que par chercher un X-Wing.
+
+| Coût | Technique | Produit |
+| --- | --- | --- |
+| 10 | Dernière case | placement |
+| 20 | Chiffre unique dans un bloc | placement |
+| 30 | Chiffre unique dans une ligne ou une colonne | placement |
+| 40 | Case à candidat unique | placement |
+| 50 | Candidats verrouillés (bloc vers ligne) | élimination |
+| 55 | Candidats verrouillés (ligne vers bloc) | élimination |
+| 60 | Paire nue | élimination |
+| 65 | Paire cachée | élimination |
+| 70 | Triplet nu | élimination |
+| 75 | Triplet caché | élimination |
+| 80 | X-Wing | élimination |
+| 85 | XY-Wing | élimination |
+
+Les coûts sont espacés de dix pour pouvoir intercaler une technique sans tout renuméroter.
+
+Une grille de référence existe pour **chacune** : une grille où cette technique est exactement le
+plafond, donc où toutes les moins chères s'épuisent et aucune plus chère n'est nécessaire. Elles ont
+été trouvées par recherche plutôt que construites à la main :
+
+```bash
+uv run python tools/find_fixtures.py
+```
+
+Que la recherche aboutisse pour les douze est en soi une information : aucune technique n'est
+redondante, et le classement par coût correspond à ce que les grilles exigent réellement.
+
 ### D'où viennent ces seuils
 
 Ils sont mesurés, pas devinés. `tools/calibrate.py` creuse un large échantillon de grilles sur toute
@@ -89,8 +125,12 @@ uv run python tools/calibrate.py --per-floor 200 --out sample.csv
 - **Pas de symétrie** dans le motif des cases vides. C'est une pure convention esthétique de
   magazine, et creuser par paires empêcherait de contrôler le nombre d'indices au chiffre près —
   or c'est le levier principal du réglage des niveaux 1 à 6.
-- **Génération ciblée, pas subie.** On creuse vers la fourchette d'indices visée en refusant tout
-  retrait qui ferait franchir le plafond de technique, puis on vérifie le goulot.
+- **Génération ciblée, pas subie.** Creuser ne sait pas viser : à 38 indices, le niveau obtenu va
+  de 1 à 8. On creuse donc vers une fourchette, on **classe**, et on recommence si le niveau n'est
+  pas le bon — la cible se déplaçant d'un cran dans le sens du manque. Vérifier le plafond de
+  technique après *chaque retrait* a été envisagé puis écarté : une résolution logique complète par
+  retrait, une cinquantaine par grille, pour un résultat que la boucle d'essais atteint dix fois
+  moins cher.
 - **Reproductibilité.** Un `random.Random(seed)` passé explicitement partout, jamais le `random`
   global. Même seed, même PDF. La seed est imprimée en pied de page.
 - **Rendu découplé.** Une interface `Renderer` isole le format de sortie ; ReportLab n'en est qu'une
@@ -142,6 +182,39 @@ uv run sudoku carnet --de 3 --a 6 --nombre 20 --seed 111 -o carnet.pdf
 Il s'ouvre sur une page de garde avec une ligne « Carnet de : » à remplir, et se termine par les
 solutions. Deux carnets tirés avec des seeds différentes n'ont **aucune grille en commun** — de quoi
 en donner un à chaque enfant sans qu'ils tombent sur les mêmes.
+
+## Structure
+
+```
+src/sudoku/
+├── board.py       représentation, géométrie pré-calculée, candidats en masques de bits
+├── solver.py      solveur machine — une solution ? une seule ?
+├── techniques.py  les 12 techniques humaines et l'état des candidats
+├── human.py       résolution « comme un joueur », avec journal
+├── rating.py      journal → niveau de 1 à 10
+├── generator.py   creuser, classer, recommencer ; rampes de carnet
+├── render/        interface Renderer, sortie PDF (ReportLab) et texte
+└── cli.py
+tools/
+├── calibrate.py     mesure ce qui varie avec la difficulté
+└── find_fixtures.py cherche une grille par technique
+```
+
+## Performance
+
+Sur un portable, sans parallélisme :
+
+| | |
+| --- | --- |
+| Test d'unicité d'une grille | 0,1 ms |
+| Résolution logique complète | 0,3 à 0,8 ms |
+| Une grille de niveau 4 | 12 ms |
+| Une grille de niveau 10 | 93 ms |
+| Rendu PDF de 20 grilles + solutions | 22 ms |
+| **Un carnet de 20 grilles, bout en bout** | **217 ms** |
+
+Le niveau 10 coûte plus cher parce qu'il doit épuiser les douze techniques à chaque étape avant de
+conclure que la grille leur échappe.
 
 ## Développement
 
