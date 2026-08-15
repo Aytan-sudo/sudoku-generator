@@ -49,6 +49,7 @@ __all__ = [
     "Level",
     "Rating",
     "elimination_pressure",
+    "hard_score",
     "level_of",
     "rate",
     "visibility_of",
@@ -84,6 +85,14 @@ BY_NUMBER: dict[int, Level] = {level.number: level for level in LEVELS}
 
 BEYOND_LEVEL = 10
 """Reached when the catalogue runs out before the grid does."""
+
+FIRST_HARD_LEVEL = 7
+"""Where the scale stops reading visibility and starts predicting effort.
+
+Below it, no public dataset has anything to say — nobody records solving times
+on 45-given grids — so the visibility thresholds stand, validated only against
+themselves. From 7 up there is real data, and it is used.
+"""
 
 CEILING_FLOOR: dict[str, int] = {
     "full_house": 1,
@@ -174,6 +183,55 @@ def level_of(visibility: float) -> int:
     return BEYOND_LEVEL - 1
 
 
+HARD_WEIGHTS = (1.1223, -6.2877, 0.9463, -0.6158)
+"""Fitted against solving times recorded on real players.
+
+The constant, then visibility, then the ceiling's cost over 100, then the given
+count over 30. Fitted on the 237 puzzles of the Cloud Sudoku dataset that this
+project already rates 7 or above, with ``log`` of the observed time as target;
+``tools/validate.py --dataset`` reproduces it.
+
+Three quantities, all of them already in the solve log. A seven-feature model
+including a move-by-move trace scores 0.752 against 0.728 for these three — the
+extra 0.024 was not worth doubling what the generator pays on every candidate
+grid it rates.
+"""
+
+HARD_CUTS = (-0.1900, 0.0397)
+"""Where level 7 becomes 8, and 8 becomes 9.
+
+Thirds of the score over a reference population of *this generator's* hard
+grids. Taking them from the dataset instead would collapse the scale: its
+puzzles all sit between 24 and 32 givens, so an ordinary level-7 grid lands in
+its bottom decile and would come out rated 1.
+"""
+
+
+def hard_score(rating_visibility: float, ceiling: Technique | None, givens: int) -> float:
+    """Predicted log solving time, on the scale the weights were fitted on.
+
+    Higher means harder. Only meaningful for grids already known to be hard —
+    it was fitted on nothing else.
+    """
+    constant, on_visibility, on_ceiling, on_givens = HARD_WEIGHTS
+    cost = ceiling.cost if ceiling else 0
+    return (
+        constant
+        + on_visibility * rating_visibility
+        + on_ceiling * cost / 100
+        + on_givens * givens / 30
+    )
+
+
+def _hard_level(visibility: float, ceiling: Technique | None, givens: int) -> int:
+    """Split the hard band into 7, 8 and 9 by predicted human effort."""
+    score = hard_score(visibility, ceiling, givens)
+    first, second = HARD_CUTS
+    if score < first:
+        return 7
+    return 8 if score < second else 9
+
+
 def _ceiling_floor(ceiling: Technique | None) -> int:
     if ceiling is None:
         return 1
@@ -194,6 +252,10 @@ def rate(board: Board, log: SolveLog | None = None) -> Rating:
         level = BEYOND_LEVEL
     else:
         level = max(level_of(visibility), _ceiling_floor(log.ceiling))
+        if level >= FIRST_HARD_LEVEL:
+            # Inside the hard band, ranking by predicted human effort beats
+            # ranking by visibility: 0.73 against 0.62 on the reference sample.
+            level = _hard_level(visibility, log.ceiling, board.givens)
 
     return Rating(
         level=level,

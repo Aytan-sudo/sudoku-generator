@@ -6,14 +6,17 @@ import statistics
 import pytest
 
 from sudoku.board import SIZE, Board
-from sudoku.generator import dig
+from sudoku.generator import dig, generate
 from sudoku.human import SolveLog, solve_logically
 from sudoku.rating import (
     BY_NUMBER,
     CEILING_FLOOR,
+    FIRST_HARD_LEVEL,
+    HARD_CUTS,
     LEVELS,
     Rating,
     elimination_pressure,
+    hard_score,
     level_of,
     rate,
     visibility_of,
@@ -259,3 +262,49 @@ def test_elimination_pressure_rises_where_candidates_are_struck() -> None:
     pressures = [elimination_pressure(log) for log in advanced_logs()]
     assert all(pressure >= 0.0 for pressure in pressures)
     assert any(pressure > 0.0 for pressure in pressures)
+
+
+# --- The hard band is ranked by predicted human effort ----------------------
+
+
+def test_the_cuts_are_ordered() -> None:
+    assert HARD_CUTS[0] < HARD_CUTS[1]
+
+
+def test_a_darker_grid_scores_higher() -> None:
+    """Less visible means harder, so the predicted effort must rise."""
+    assert hard_score(0.10, None, 26) > hard_score(0.16, None, 26)
+
+
+def test_a_costlier_ceiling_scores_higher() -> None:
+    cheap, dear = BY_KEY["pointing"], BY_KEY["xy_wing"]
+    assert hard_score(0.14, dear, 28) > hard_score(0.14, cheap, 28)
+
+
+def test_fewer_givens_score_higher() -> None:
+    assert hard_score(0.14, None, 24) > hard_score(0.14, None, 30)
+
+
+@pytest.mark.parametrize("level", [7, 8, 9])
+def test_every_hard_level_is_reachable(level: int) -> None:
+    assert generate(level, seed=500 + level).rating.level == level
+
+
+def test_the_easy_half_is_untouched_by_the_hard_model() -> None:
+    """Levels 1 to 6 keep reading visibility — no dataset speaks for them."""
+    for level in range(1, 7):
+        assert generate(level, seed=600 + level).rating.level == level
+
+
+def test_the_hard_model_never_reaches_the_easy_levels() -> None:
+    rng = random.Random(31)
+    for _ in range(20):
+        board = dig(complete_grid(rng), rng, rng.choice([26, 28, 30]))
+        rating = rate(board)
+        if rating.solved and rating.level >= FIRST_HARD_LEVEL:
+            assert rating.level in (7, 8, 9)
+
+
+def test_beyond_the_catalogue_still_wins_over_the_score() -> None:
+    """Level 10 is a class apart and the hard model must not claim it."""
+    assert rate(Board.from_string(HARDEST_PUZZLE)).level == 10

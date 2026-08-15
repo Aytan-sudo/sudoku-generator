@@ -42,10 +42,13 @@ exigeante ne peut pas être classée facile, même si elle paraît aérée par a
 | 4 | Facile + | ≥ 25 % | — | 36-41 |
 | 5 | Moyen | ≥ 21 % | Chiffre unique ligne/colonne | 33-37 |
 | 6 | Moyen + | ≥ 18 % | Case à candidat unique | 31-34 |
-| 7 | Confirmé | ≥ 16 % | Candidats verrouillés | 29-32 |
-| 8 | Difficile | ≥ 14 % | Paires / triplets, nus et cachés | 27-30 |
-| 9 | Expert | < 14 % | X-Wing, XY-Wing | 25-28 |
+| 7 | Confirmé | ‡ | Candidats verrouillés | 29-32 |
+| 8 | Difficile | ‡ | Paires / triplets, nus et cachés | 27-30 |
+| 9 | Expert | ‡ | X-Wing, XY-Wing | 25-28 |
 | 10 | Diabolique † | — | Hors catalogue | 22-27 |
+
+‡ **Les niveaux 7 à 9 ne se lisent plus sur la visibilité** mais sur un score d'effort humain
+prédit, ajusté sur des temps de résolution réels — voir « Calibration sur des joueurs réels ».
 
 † **Le niveau 10 n'est pas le prolongement de l'échelle, c'est une classe à part.** Il ne se détecte
 par aucune technique supplémentaire : c'est le cas où **le catalogue est épuisé** sans que la grille
@@ -124,6 +127,49 @@ Reproduire les mesures :
 
 ```bash
 uv run python tools/calibrate.py --per-floor 200 --out sample.csv
+```
+
+### Calibration sur des joueurs réels
+
+Tout ce qui précède valide la **cohérence interne** du score. Ça ne montre pas qu'une grille de
+niveau 6 est plus dure *pour quelqu'un* qu'une de niveau 5.
+
+Le [dataset Cloud Sudoku](https://github.com/synnwang/sudoku_dataset_difficulty) enregistre, pour
+344 grilles, le temps réellement mis par des joueurs et leur taux d'abandon. `tools/validate.py`
+confronte le classificateur à ces temps.
+
+| Mesure seule | Spearman vs temps observé |
+| --- | --- |
+| **visibilité** | **−0,727** |
+| plafond de technique | +0,671 |
+| dépendance sur 25 coups (modèle de Pelánek) | −0,693 |
+| part de coups forcés | +0,634 |
+| nombre d'indices | −0,275 |
+
+Trois enseignements :
+
+1. **La visibilité tient déjà** à −0,73 contre des temps humains. Ce n'était pas établi.
+2. Le modèle « un coup à la fois » de Pelánek, testé, fait **moins bien** seul (−0,693) et
+   n'apporte rien une fois la visibilité présente. Ses corrélations de 0,88 viennent de la
+   *combinaison* de métriques, pas de celle-là.
+3. **Combiner paie** : visibilité + plafond + indices atteint **0,728** en validation croisée sur
+   la zone dure, contre 0,620 pour la visibilité seule. Ces trois quantités sont déjà dans le
+   journal de résolution — aucun calcul supplémentaire.
+
+D'où le fonctionnement actuel : les niveaux **7 à 9 sont attribués par ce score d'effort prédit**,
+découpé en tiers sur une population de référence faite des grilles **de ce générateur**. Les
+découper sur celle du dataset effondrerait l'échelle : ses grilles vont toutes de 24 à 32 indices,
+si bien qu'un niveau 7 ordinaire y tomberait dans le premier décile.
+
+Le niveau attribué corrèle désormais **0,735** contre les temps humains sur l'ensemble du dataset,
+et **0,669** dans la zone 7-9 — contre 0,706 et 0,598 auparavant.
+
+> **Les niveaux 1 à 6 restent sur la visibilité seule.** Aucun jeu de données public ne contient de
+> grilles à 40 indices : personne ne chronomètre des sudokus faciles. Ce bas d'échelle ne sera
+> validé que par les enfants qui utilisent les carnets.
+
+```bash
+uv run python tools/validate.py --dataset 20240415.csv
 ```
 
 ## Décisions de conception

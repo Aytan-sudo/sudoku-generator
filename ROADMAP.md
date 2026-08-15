@@ -298,3 +298,21 @@ résolution et taux d'abandon. `tools/validate.py` rejoue la confrontation.
 
 Le nombre d'indices à −0,275 confirme la littérature *et* la mesure faite à l'étape 3 : ce n'est
 pas un prédicteur de difficulté.
+
+### Niveaux 7 à 9 calibrés sur des humains, 15/08/2026 ✅
+
+- [x] `hard_score()` — visibilité, plafond, indices, poids ajustés sur les 237 grilles dures du
+      dataset avec `log(temps observé)` en cible
+- [x] Découpage en tiers sur une population de référence faite des grilles **du générateur**, et
+      non du dataset — sans quoi l'échelle s'effondre (un niveau 7 ordinaire tombe au 1er décile)
+- [x] Niveaux 1-6 et 10 inchangés
+- [x] Tests : monotonie du score, atteignabilité des niveaux 7-9, non-contamination du bas d'échelle
+
+**Gain mesuré : 0,706 → 0,735 sur l'ensemble, 0,598 → 0,669 sur la zone 7-9.**
+
+Le modèle à sept mesures atteignait 0,752 contre 0,728 pour les trois retenues. Les quatre
+mesures écartées exigeaient une trace « un coup à la fois » qui aurait doublé le coût payé par le
+générateur sur chaque grille candidate — +0,024 ne le justifiait pas.
+
+La discrétisation en trois paliers explique l'écart entre 0,728 (score continu) et 0,669 (niveau
+attribué) : trois seaux ne peuvent pas restituer toute la résolution d'un score continu.
