@@ -92,16 +92,27 @@ Sur 400 grilles (40 par niveau) : **aucun échec**, médiane 2 à 28 ms, pire ca
 > résolution logique complète par retrait, soit une cinquantaine par grille, pour un taux
 > d'acceptation que la boucle d'essais atteint à un dixième du prix.
 
-## Étape 5 — Rendu PDF ◄── **première impression utilisable**
+## Étape 5 — Rendu PDF ✅ ◄── **première impression utilisable**
 
-- [ ] `render/base.py` — interface `Renderer`
-- [ ] `render/pdf.py` — ReportLab, A4, grille 162 mm centrée (cellule 18 mm)
-- [ ] Filets : cellules 0,4 pt gris 40 % / blocs 1,6 pt / cadre 2 pt
-- [ ] Chiffres centrés **optiquement** (via ascender/descender, pas `height / 2`)
-- [ ] En-tête : « Sudoku · Niveau N sur 10 — Nom » + jauge à 10 pastilles
-- [ ] Ligne prénom / temps
-- [ ] Pied de page : identifiant de grille + seed + date
-- [ ] `render/text.py` — rendu terminal pour le débogage
+- [x] `render/base.py` — interface `Renderer`
+- [x] `render/pdf.py` — ReportLab, A4, grille **180 mm** centrée (**cellule 20 mm**)
+- [x] Filets : cellules 0,4 pt gris 40 % / blocs 1,6 pt / cadre 2 pt
+- [x] Chiffres centrés **optiquement** (sur l'ascendante, pas sur la hauteur de ligne)
+- [x] En-tête : « Sudoku · Niveau N sur 10 — Nom » + jauge à 10 pastilles
+- [x] Ligne prénom / temps
+- [x] Pied de page : identifiant, nb d'indices, seed, date
+- [x] Pages de solutions, six par page, étiquetées par identifiant
+- [x] `render/text.py` — rendu terminal pour le débogage
+- [x] Tests : nombre de pages, format A4, contenu textuel, centrage optique (`pypdf`)
+
+Grille portée de 162 à **180 mm** après contrôle visuel : la mise en page d'origine laissait une
+large bande blanche en bas de feuille. Les 18 mm récupérés sont passés dans la grille, ce qui donne
+des cellules de 20 mm — confortables pour un crayon d'enfant — et 15 mm de marge latérale, dans les
+limites de n'importe quelle imprimante domestique.
+
+Le centrage vertical des chiffres se fait sur l'**ascendante**, pas sur la hauteur de ligne : cette
+dernière réserve la place d'un jambage qu'aucun chiffre n'a, et enfoncerait chaque chiffre d'environ
+un dixième de sa taille.
 
 ## Étape 6 — CLI
 

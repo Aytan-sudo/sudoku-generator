@@ -25,6 +25,7 @@ packages = ["src/sudoku"]
 dev = [
     "pytest>=8.3",
     "pytest-cov>=6.0",
+    "pypdf>=5.1",
     "ruff>=0.9",
     "mypy>=1.14",
 ]
@@ -49,6 +50,13 @@ select = [
 python_version = "3.12"
 strict = true
 files = ["src", "tests", "tools"]
+
+[[tool.mypy.overrides]]
+module = "reportlab.*"
+ignore_missing_imports = true
+# ReportLab ships no type information. The published stubs lag the runtime
+# version, and the surface used here is small, so the imports are simply
+# untyped rather than checked against a stale contract.
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

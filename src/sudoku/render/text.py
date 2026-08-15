@@ -1,0 +1,54 @@
+"""Grids as text, for looking at things without opening a PDF viewer."""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from pathlib import Path
+
+from sudoku.board import BOX_SIZE, SIZE, Board
+from sudoku.generator import Puzzle
+from sudoku.render.base import Renderer
+
+TOP = "┌───────┬───────┬───────┐"
+MIDDLE = "├───────┼───────┼───────┤"
+BOTTOM = "└───────┴───────┴───────┘"
+
+
+def board_to_text(board: Board) -> str:
+    """Render ``board`` as a framed block of nine rows, empty cells shown as dots."""
+    lines = [TOP]
+    for row in range(SIZE):
+        cells = [board[row * SIZE + col] for col in range(SIZE)]
+        groups = [
+            " ".join(str(digit) if digit else "." for digit in cells[start : start + BOX_SIZE])
+            for start in range(0, SIZE, BOX_SIZE)
+        ]
+        lines.append("│ " + " │ ".join(groups) + " │")
+        if row % BOX_SIZE == BOX_SIZE - 1 and row != SIZE - 1:
+            lines.append(MIDDLE)
+    lines.append(BOTTOM)
+    return "\n".join(lines)
+
+
+def puzzle_to_text(puzzle: Puzzle, *, solution: bool = False) -> str:
+    """Render a puzzle with its heading, and optionally its solution below."""
+    rating = puzzle.rating
+    parts = [
+        f"Sudoku · {rating.headline}",
+        f"n° {puzzle.identifier} · {rating.givens} indices · "
+        f"visibilité {rating.visibility:.0%} · seed {puzzle.seed}",
+        board_to_text(puzzle.board),
+    ]
+    if solution:
+        parts += ["Solution", board_to_text(puzzle.solution)]
+    return "\n".join(parts)
+
+
+class TextRenderer(Renderer):
+    """Writes the same booklet as plain text."""
+
+    def render(self, puzzles: Sequence[Puzzle], path: Path, *, solutions: bool = False) -> None:
+        if not puzzles:
+            raise ValueError("aucune grille à rendre")
+        blocks = [puzzle_to_text(puzzle, solution=solutions) for puzzle in puzzles]
+        path.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")
