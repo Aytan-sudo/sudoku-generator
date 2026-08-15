@@ -79,8 +79,13 @@ class Puzzle:
 
     @property
     def identifier(self) -> str:
-        """Short stable tag for the footer of the sheet."""
-        return hashlib.blake2b(self.board.to_string().encode(), digest_size=2).hexdigest()
+        """Short stable tag for the footer of the sheet.
+
+        Four bytes rather than two: eight hex characters read no worse in a
+        footer, and two bytes give only 65536 values, which starts colliding
+        around a few hundred grids.
+        """
+        return hashlib.blake2b(self.board.to_string().encode(), digest_size=4).hexdigest()
 
 
 def dig(board: Board, rng: random.Random, target_givens: int) -> Board:

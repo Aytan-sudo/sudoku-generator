@@ -19,6 +19,7 @@ from sudoku.board import CELL_COUNT, Board
 from sudoku.techniques import (
     BY_KEY,
     CATALOGUE,
+    Action,
     CandidateState,
     ContradictionError,
     Technique,
@@ -47,6 +48,15 @@ class SolveStep:
     simply because few cells are left. Dividing by this gives the share of the
     remaining work that was in plain sight, which compares across grids of very
     different fill levels.
+    """
+
+    action: Action
+    """Whether this step placed digits or only struck candidates off.
+
+    The two cannot be pooled. ``available`` counts deductions, and four
+    eliminations are not four placeable cells — dividing them by the number of
+    empty cells would answer no question at all. Anything reasoning about how
+    much of the grid was in plain sight must keep to the placement steps.
     """
 
 
@@ -104,11 +114,12 @@ def solve_logically(
             if not found:
                 continue
             remaining = CELL_COUNT - state.board.givens
+            action = found[0].action
             try:
                 applied = sum(state.apply(deduction) for deduction in found)
             except ContradictionError:
                 return SolveLog(solved=False, steps=tuple(steps), board=state.board)
-            steps.append(SolveStep(technique.key, len(found), applied, remaining))
+            steps.append(SolveStep(technique.key, len(found), applied, remaining, action))
             # A technique that reports moves but changes nothing would spin the
             # loop forever; treat it as the end of the road.
             if applied == 0:

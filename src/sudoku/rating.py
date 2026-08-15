@@ -42,9 +42,17 @@ from dataclasses import dataclass
 
 from sudoku.board import Board
 from sudoku.human import SolveLog, solve_logically
-from sudoku.techniques import CATALOGUE, Technique
+from sudoku.techniques import CATALOGUE, Action, Technique
 
-__all__ = ["LEVELS", "Level", "Rating", "level_of", "rate", "visibility_of"]
+__all__ = [
+    "LEVELS",
+    "Level",
+    "Rating",
+    "elimination_pressure",
+    "level_of",
+    "rate",
+    "visibility_of",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,10 +133,35 @@ class Rating:
 def visibility_of(log: SolveLog) -> float:
     """Mean share of the remaining cells that were immediately placeable.
 
+    Only the placement steps count. The advanced techniques report eliminations,
+    and four struck candidates are not four placeable cells — pooling them would
+    make this measure something other than what its name says. Measured on the
+    current sample the difference is under a hundredth and moves no grid's level,
+    because eliminations are a handful of steps against fifty placements. The
+    separation is kept anyway: a metric that means what it claims stays correct
+    when the mix shifts, and one that merely happens to agree does not.
+
     An already-complete grid never takes a step; it counts as fully visible.
     """
-    shares = [step.available / step.remaining for step in log.steps if step.remaining]
+    shares = [
+        step.available / step.remaining
+        for step in log.steps
+        if step.remaining and step.action is Action.PLACE
+    ]
     return statistics.fmean(shares) if shares else 1.0
+
+
+def elimination_pressure(log: SolveLog) -> float:
+    """Candidates struck off per placement — how much pencil work a grid demands.
+
+    Zero for everything the singles can carry, which is most of the scale. It
+    rises only where the advanced techniques are needed, so it is the raw
+    material for telling levels 7 to 9 apart later on; it feeds no rating yet,
+    and will not until it has been calibrated.
+    """
+    struck = sum(step.applied for step in log.steps if step.action is Action.ELIMINATE)
+    placed = sum(step.applied for step in log.steps if step.action is Action.PLACE)
+    return struck / placed if placed else 0.0
 
 
 def level_of(visibility: float) -> int:

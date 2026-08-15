@@ -144,7 +144,7 @@ def test_a_drawn_seed_is_recorded_and_replays() -> None:
 
 def test_identifier_is_short_stable_and_grid_specific() -> None:
     puzzle = generate(3, seed=55)
-    assert len(puzzle.identifier) == 4
+    assert len(puzzle.identifier) == 8
     assert int(puzzle.identifier, 16) >= 0
     assert puzzle.identifier == generate(3, seed=55).identifier
     assert puzzle.identifier != generate(3, seed=56).identifier

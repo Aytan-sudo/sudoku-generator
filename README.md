@@ -26,7 +26,9 @@ C'est le second qui attribue la note.
 ## L'échelle de difficulté
 
 Le niveau se lit sur la **visibilité** : la part moyenne des cases encore vides qui étaient
-immédiatement plaçables à chaque étape. Une grille qui offre à tout instant la moitié de son
+immédiatement plaçables à chaque étape — mesurée sur les seules étapes de **placement**, les
+techniques avancées ne produisant que des éliminations de candidats, qu'on ne peut pas rapporter à
+un nombre de cases. Une grille qui offre à tout instant la moitié de son
 reliquat se remplit toute seule ; une grille qui n'en montre qu'un dixième se chasse.
 
 Le **plafond de technique** ne sert qu'à *relever* le niveau : une grille qui force une technique
@@ -43,10 +45,14 @@ exigeante ne peut pas être classée facile, même si elle paraît aérée par a
 | 7 | Confirmé | ≥ 16 % | Candidats verrouillés | 29-32 |
 | 8 | Difficile | ≥ 14 % | Paires / triplets, nus et cachés | 27-30 |
 | 9 | Expert | < 14 % | X-Wing, XY-Wing | 25-28 |
-| 10 | Diabolique | — | Hors catalogue | 22-27 |
+| 10 | Diabolique † | — | Hors catalogue | 22-27 |
 
-Le niveau 10 ne se détecte pas par une technique supplémentaire : c'est le cas où **le catalogue est
-épuisé** sans que la grille soit résolue. Les *forcing chains* ne sont donc jamais implémentées.
+† **Le niveau 10 n'est pas le prolongement de l'échelle, c'est une classe à part.** Il ne se détecte
+par aucune technique supplémentaire : c'est le cas où **le catalogue est épuisé** sans que la grille
+soit résolue. Les *forcing chains* ne sont donc jamais implémentées. Une grille peut exiger une
+technique absente du catalogue sans être pour autant la plus dure qu'un humain rencontrera —
+« hors modèle » décrit mieux le niveau 10 que « plus dur que 9 ». **L'échelle réellement graduée va
+de 1 à 9.**
 
 Les fourchettes d'indices sont indicatives, pas prescriptives : à nombre d'indices constant, la
 visibilité varie du simple au double d'une grille à l'autre. Le générateur creuse vers une

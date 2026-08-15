@@ -7,19 +7,25 @@ import pytest
 
 from sudoku.board import SIZE, Board
 from sudoku.generator import dig
-from sudoku.human import solve_logically
+from sudoku.human import SolveLog, solve_logically
 from sudoku.rating import (
     BY_NUMBER,
     CEILING_FLOOR,
     LEVELS,
     Rating,
+    elimination_pressure,
     level_of,
     rate,
     visibility_of,
 )
 from sudoku.solver import complete_grid
-from sudoku.techniques import CATALOGUE
-from tests.grids import CLASSIC_PUZZLE, CLASSIC_SOLUTION, HARDEST_PUZZLE
+from sudoku.techniques import BY_KEY, CATALOGUE, Action
+from tests.grids import (
+    CLASSIC_PUZZLE,
+    CLASSIC_SOLUTION,
+    HARDEST_PUZZLE,
+    NEEDS_TECHNIQUE,
+)
 
 # --- The scale --------------------------------------------------------------
 
@@ -205,3 +211,51 @@ def test_a_relabelled_grid_is_still_a_proper_puzzle() -> None:
     twin = relabelled(original, rng)
     assert twin.is_valid()
     assert twin.givens == original.givens
+
+
+# --- Placements and eliminations are not the same thing ----------------------
+
+
+def advanced_logs() -> list[SolveLog]:
+    return [solve_logically(Board.from_string(grid)) for grid in NEEDS_TECHNIQUE.values()]
+
+
+def test_a_step_reports_one_kind_of_deduction() -> None:
+    """No technique mixes the two, which is what lets a step carry a single action."""
+    for log in advanced_logs():
+        for step in log.steps:
+            assert step.action in (Action.PLACE, Action.ELIMINATE)
+            if BY_KEY[step.technique].cost >= 50:
+                assert step.action is Action.ELIMINATE
+            else:
+                assert step.action is Action.PLACE
+
+
+def test_visibility_ignores_elimination_steps() -> None:
+    """Four struck candidates are not four placeable cells.
+
+    Pooling them would make ``visibility_of`` measure something other than what
+    its name says, so the elimination steps must leave it untouched.
+    """
+    for log in advanced_logs():
+        placements = [step for step in log.steps if step.action is Action.PLACE]
+        assert placements, "une grille résolue comporte forcément des placements"
+        expected = statistics.fmean(
+            step.available / step.remaining for step in placements if step.remaining
+        )
+        assert visibility_of(log) == pytest.approx(expected)
+
+
+def test_visibility_stays_a_share_on_the_hardest_grids() -> None:
+    for log in advanced_logs():
+        assert 0.0 < visibility_of(log) <= 1.0
+
+
+def test_elimination_pressure_is_zero_without_eliminations() -> None:
+    assert elimination_pressure(solve_logically(Board.from_string(CLASSIC_PUZZLE))) == 0.0
+
+
+def test_elimination_pressure_rises_where_candidates_are_struck() -> None:
+    pressures = [elimination_pressure(log) for log in advanced_logs()]
+    assert all(pressure >= 0.0 for pressure in pressures)
+    assert any(pressure > 0.0 for pressure in pressures)

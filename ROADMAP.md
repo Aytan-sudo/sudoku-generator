@@ -238,3 +238,22 @@ pied de page.
 
 Le dossier `out/` dédié vient de là : séparer ce qui est généré de ce qui est source rend visible
 qu'un fichier de `out/` ne tient qu'à sa seed.
+
+### Audit externe, 15/08/2026 ✅
+
+- [x] **Visibilité : placements et éliminations séparés.** `SolveStep` porte désormais son `action`,
+      et `visibility_of()` ne retient que les placements. Mesuré avant correction sur 39 grilles
+      comportant des éliminations : écart moyen **+0,0006**, **aucun niveau déplacé** — une grille
+      compte ~50 étapes de placement pour 1 à 3 d'élimination. Corrigé pour la justesse, pas pour le
+      résultat : une métrique qui ment sur ce qu'elle mesure devient fausse dès que le mélange change
+- [x] `elimination_pressure()` — candidats rayés par placement. Ne sert encore aucune note ; c'est la
+      matière première pour départager les niveaux 7 à 9, et elle attendra d'être calibrée
+- [x] `LICENSE` (MIT) — annoncé partout, absent du dépôt
+- [x] CI sur **Python 3.12 et 3.13**, les deux versions que `requires-python` promet
+- [x] Identifiants et empreintes portés de 2 à **4 octets** (8 caractères hexadécimaux)
+- [x] Niveau 10 documenté comme **classe à part** et non comme prolongement : l'échelle réellement
+      graduée va de 1 à 9
+
+Points de l'audit **non retenus pour l'instant** : aucun. Deux de ses recommandations relèvent du
+terrain plutôt que du code — valider l'échelle sur les enfants qui utilisent les carnets, et
+accepter que la cohérence interne démontrée ne vaut pas validation empirique.

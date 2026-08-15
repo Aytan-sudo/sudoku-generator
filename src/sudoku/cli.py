@@ -81,7 +81,7 @@ def _default_path(
     which is what keeps a folder of test booklets readable.
     """
     digest = "".join(puzzle.identifier for puzzle in puzzles).encode()
-    tag = hashlib.blake2b(digest, digest_size=2).hexdigest()
+    tag = hashlib.blake2b(digest, digest_size=4).hexdigest()
     parts = [prefix]
     if player:
         parts.append(_slug(player))
