@@ -7,7 +7,12 @@ be typed without fighting a keyboard layout.
 
 from __future__ import annotations
 
+import hashlib
+import secrets
+import unicodedata
 from collections import Counter
+from collections.abc import Sequence
+from datetime import date
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
@@ -41,8 +46,44 @@ class Format(StrEnum):
     texte = "texte"
 
 
-DEFAULT_NAME = {Format.pdf: Path("sudokus.pdf"), Format.texte: Path("sudokus.txt")}
+SUFFIX = {Format.pdf: ".pdf", Format.texte: ".txt"}
 RENDERERS: dict[Format, type[Renderer]] = {Format.pdf: PdfRenderer, Format.texte: TextRenderer}
+
+
+def _slug(text: str) -> str:
+    """Reduce a name to something safe in a filename, accents included."""
+    decomposed = unicodedata.normalize("NFKD", text)
+    plain = "".join(char for char in decomposed if not unicodedata.combining(char))
+    kept = "".join(char if char.isalnum() else "-" for char in plain.lower())
+    return "-".join(part for part in kept.split("-") if part)
+
+
+def _default_path(
+    prefix: str,
+    player: str | None,
+    seed: int,
+    puzzles: Sequence[Puzzle],
+    format_: Format,
+) -> Path:
+    """Build a name no earlier run can collide with.
+
+    Date and seed say where a file came from; the trailing tag is a digest of the
+    grids themselves. So the same command run twice lands on the same name and
+    overwrites an identical file, while anything that differs gets its own —
+    which is what keeps a folder of test booklets readable.
+    """
+    digest = "".join(puzzle.identifier for puzzle in puzzles).encode()
+    tag = hashlib.blake2b(digest, digest_size=2).hexdigest()
+    parts = [prefix]
+    if player:
+        parts.append(_slug(player))
+    parts += [f"{date.today():%Y%m%d}", str(seed), tag]
+    return Path("-".join(parts) + SUFFIX[format_])
+
+
+def _beside(path: Path, marker: str) -> Path:
+    """A companion file next to ``path``, e.g. carnet.pdf → carnet-solutions.pdf."""
+    return path.with_name(f"{path.stem}-{marker}{path.suffix}")
 
 
 @app.callback()
@@ -74,6 +115,9 @@ def generate(
     nombre: Annotated[
         int, typer.Option("--nombre", "-c", min=1, help="Nombre de grilles à produire.")
     ] = 1,
+    joueur: Annotated[
+        str | None, typer.Option("--joueur", "-j", help="Nom inscrit sur les feuilles.")
+    ] = None,
     sortie: Annotated[Path | None, typer.Option("--out", "-o", help="Fichier à écrire.")] = None,
     seed: Annotated[
         int | None,
@@ -81,7 +125,7 @@ def generate(
     ] = None,
     solutions: Annotated[
         bool,
-        typer.Option("--solutions/--sans-solutions", help="Ajoute les solutions à la fin."),
+        typer.Option("--solutions/--sans-solutions", help="Écrit aussi un fichier de solutions."),
     ] = False,
     format_: Annotated[Format, typer.Option("--format", help="Format de sortie.")] = Format.pdf,
 ) -> None:
@@ -90,7 +134,8 @@ def generate(
     Chaque grille porte sa propre seed en pied de page : elle peut être
     régénérée seule, indépendamment du lot.
     """
-    destination = sortie or DEFAULT_NAME[format_]
+    if seed is None:
+        seed = secrets.randbits(32)
 
     try:
         puzzles = generate_many(niveau, nombre, seed)
@@ -98,10 +143,22 @@ def generate(
         typer.secho(f"Échec de génération : {error}", fg=typer.colors.RED, err=True)
         raise typer.Exit(1) from error
 
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    RENDERERS[format_]().render(puzzles, destination, solutions=solutions)
+    destination = sortie or _default_path("sudokus", joueur, seed, puzzles, format_)
+    _write(puzzles, destination, format_, solutions=solutions, player=joueur)
 
-    _report(puzzles, niveau, destination)
+    plural = "s" if len(puzzles) > 1 else ""
+    typer.secho(
+        f"{len(puzzles)} grille{plural} de niveau {niveau} « {BY_NUMBER[niveau].name} »"
+        f" → {destination}",
+        bold=True,
+    )
+    for puzzle in puzzles:
+        rating = puzzle.rating
+        typer.echo(
+            f"  n° {puzzle.identifier}   {rating.givens} indices"
+            f"   visibilité {rating.visibility:.0%}   seed {puzzle.seed}"
+        )
+    _announce_solutions(solutions, destination)
 
 
 @app.command()
@@ -115,6 +172,9 @@ def carnet(
     nombre: Annotated[
         int, typer.Option("--nombre", "-c", min=1, help="Nombre de grilles du carnet.")
     ] = 20,
+    joueur: Annotated[
+        str | None, typer.Option("--joueur", "-j", help="Nom inscrit sur la garde et les feuilles.")
+    ] = None,
     sortie: Annotated[Path | None, typer.Option("--out", "-o", help="Fichier à écrire.")] = None,
     seed: Annotated[
         int | None,
@@ -125,13 +185,14 @@ def carnet(
     ] = "Carnet de sudokus",
     solutions: Annotated[
         bool,
-        typer.Option("--solutions/--sans-solutions", help="Ajoute les solutions à la fin."),
+        typer.Option("--solutions/--sans-solutions", help="Écrit aussi un carnet de solutions."),
     ] = True,
     format_: Annotated[Format, typer.Option("--format", help="Format de sortie.")] = Format.pdf,
 ) -> None:
     """Produit un carnet dont la difficulté monte de page en page.
 
     Les premières grilles mettent en confiance, les dernières font travailler.
+    Les solutions partent dans un document séparé, qui reste chez l'adulte.
     """
     if de > a:
         typer.secho(
@@ -140,8 +201,8 @@ def carnet(
             err=True,
         )
         raise typer.Exit(1)
-
-    destination = sortie or DEFAULT_NAME[format_].with_stem("carnet")
+    if seed is None:
+        seed = secrets.randbits(32)
 
     try:
         puzzles = generate_ramp(de, a, nombre, seed)
@@ -149,13 +210,13 @@ def carnet(
         typer.secho(f"Échec de génération : {error}", fg=typer.colors.RED, err=True)
         raise typer.Exit(1) from error
 
+    destination = sortie or _default_path("carnet", joueur, seed, puzzles, format_)
     cover = Cover(
         title=titre,
         subtitle=f"{nombre} grilles, du niveau {de} « {BY_NUMBER[de].name} »"
         f" au niveau {a} « {BY_NUMBER[a].name} »",
     )
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    RENDERERS[format_]().render(puzzles, destination, solutions=solutions, cover=cover)
+    _write(puzzles, destination, format_, solutions=solutions, player=joueur, cover=cover)
 
     typer.secho(f"{len(puzzles)} grilles, niveaux {de} à {a} → {destination}", bold=True)
     counts = Counter(puzzle.rating.level for puzzle in puzzles)
@@ -163,23 +224,31 @@ def carnet(
         typer.echo(
             f"  niveau {level:>2} « {BY_NUMBER[level].name:<14} » {counts[level]:>3} grilles"
         )
-    typer.echo(f"  seed du carnet : {seed if seed is not None else 'tirée au hasard'}")
+    typer.echo(f"  seed du carnet : {seed}")
+    _announce_solutions(solutions, destination)
 
 
-def _report(puzzles: list[Puzzle], level: int, destination: Path) -> None:
-    """Recap what was produced, so a batch can be judged without opening it."""
-    plural = "s" if len(puzzles) > 1 else ""
-    typer.secho(
-        f"{len(puzzles)} grille{plural} de niveau {level} « {BY_NUMBER[level].name} »"
-        f" → {destination}",
-        bold=True,
-    )
-    for puzzle in puzzles:
-        rating = puzzle.rating
-        typer.echo(
-            f"  n° {puzzle.identifier}   {rating.givens} indices"
-            f"   visibilité {rating.visibility:.0%}   seed {puzzle.seed}"
-        )
+def _write(
+    puzzles: Sequence[Puzzle],
+    destination: Path,
+    format_: Format,
+    *,
+    solutions: bool,
+    player: str | None,
+    cover: Cover | None = None,
+) -> None:
+    """Write the booklet, and its solutions alongside as a separate document."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    renderer = RENDERERS[format_]()
+    renderer.render(puzzles, destination, cover=cover, player=player)
+    if solutions:
+        answers = Cover(title="Solutions", subtitle=cover.subtitle) if cover else None
+        renderer.render_solutions(puzzles, _beside(destination, "solutions"), cover=answers)
+
+
+def _announce_solutions(solutions: bool, destination: Path) -> None:
+    if solutions:
+        typer.secho(f"  solutions → {_beside(destination, 'solutions')}", fg=typer.colors.BLUE)
 
 
 if __name__ == "__main__":

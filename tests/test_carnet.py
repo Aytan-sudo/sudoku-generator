@@ -147,9 +147,35 @@ def test_the_command_builds_a_booklet(tmp_path: Path) -> None:
     path = tmp_path / "carnet.pdf"
     code, output = run("carnet", "--de", "3", "--a", "5", "-c", "6", "--seed", "3", "-o", str(path))
     assert code == 0
-    # one cover, six grids, one page of solutions
-    assert len(PdfReader(path).pages) == 1 + 6 + 1
+    assert len(PdfReader(path).pages) == 1 + 6  # cover, then the grids
     assert "niveaux 3 à 5" in output
+
+
+def test_the_solutions_are_a_booklet_of_their_own(tmp_path: Path) -> None:
+    """What the child gets and what the adult keeps are two documents."""
+    path = tmp_path / "carnet.pdf"
+    run("carnet", "--de", "3", "--a", "5", "-c", "6", "--seed", "3", "-o", str(path))
+    answers = tmp_path / "carnet-solutions.pdf"
+    assert answers.exists()
+    assert len(PdfReader(answers).pages) == 1
+    assert "Solutions" in PdfReader(answers).pages[0].extract_text()
+
+
+def test_the_solutions_booklet_opens_on_its_content(tmp_path: Path) -> None:
+    """No stray blank sheet before the first page of answers."""
+    path = tmp_path / "carnet.pdf"
+    run("carnet", "--de", "3", "--a", "4", "-c", "8", "--seed", "9", "-o", str(path))
+    pages = PdfReader(tmp_path / "carnet-solutions.pdf").pages
+    assert len(pages) == 2
+    assert "Solutions" in pages[0].extract_text()
+
+
+def test_the_player_name_appears_on_the_cover(tmp_path: Path) -> None:
+    path = tmp_path / "carnet.pdf"
+    run("carnet", "--de", "3", "--a", "4", "-c", "4", "-j", "Camille", "-o", str(path))
+    reader = PdfReader(path)
+    assert "Camille" in reader.pages[0].extract_text()
+    assert "Camille" in reader.pages[1].extract_text()
 
 
 def test_the_recap_counts_each_level(tmp_path: Path) -> None:
@@ -165,6 +191,7 @@ def test_solutions_can_be_left_out(tmp_path: Path) -> None:
     code, _ = run("carnet", "--de", "3", "--a", "4", "-c", "4", "--sans-solutions", "-o", str(path))
     assert code == 0
     assert len(PdfReader(path).pages) == 1 + 4
+    assert not (tmp_path / "carnet-solutions.pdf").exists()
 
 
 def test_the_command_refuses_a_downhill_ramp(tmp_path: Path) -> None:
@@ -176,5 +203,8 @@ def test_the_default_booklet_is_named_carnet(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    run("carnet", "--de", "3", "--a", "4", "-c", "4", "--seed", "12")
-    assert (tmp_path / "carnet.pdf").exists()
+    run("carnet", "--de", "3", "--a", "4", "-c", "4", "--seed", "12", "--joueur", "Zoé")
+    names = {path.name for path in tmp_path.iterdir()}
+    assert len(names) == 2
+    assert all(name.startswith("carnet-zoe-") and "12" in name for name in names)
+    assert sum(name.endswith("-solutions.pdf") for name in names) == 1

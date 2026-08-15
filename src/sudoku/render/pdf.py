@@ -124,21 +124,31 @@ def draw_gauge(canvas: Canvas, level: int, centre_x: float, centre_y: float) -> 
         canvas.circle(start + position * gap, centre_y, radius, stroke=1, fill=1)
 
 
-def _draw_write_in_line(canvas: Canvas, baseline: float) -> None:
-    """The prénom / temps line — she fills it in, and times herself."""
+def _draw_write_in_line(canvas: Canvas, baseline: float, player: str | None = None) -> None:
+    """The prénom / temps line — she fills it in, and times herself.
+
+    A known name is printed rather than ruled, so only the time is left to write.
+    """
     canvas.setFont(FONT, 11)
     canvas.setFillGray(0.25)
     canvas.setStrokeGray(0.55)
     canvas.setLineWidth(0.5)
 
     middle = GRID_LEFT + GRID_SIZE * 0.58
-    for label, start, end in (
-        ("Prénom :", GRID_LEFT, middle - 12 * mm),
-        ("Temps :", middle, GRID_LEFT + GRID_SIZE),
+    for label, start, end, filled in (
+        ("Prénom :", GRID_LEFT, middle - 12 * mm, player),
+        ("Temps :", middle, GRID_LEFT + GRID_SIZE, None),
     ):
+        canvas.setFont(FONT, 11)
+        canvas.setFillGray(0.25)
         canvas.drawString(start, baseline, label)
-        rule_start = start + canvas.stringWidth(label, FONT, 11) + 3 * mm
-        canvas.line(rule_start, baseline - 1.5 * mm, end, baseline - 1.5 * mm)
+        after = start + canvas.stringWidth(label, FONT, 11) + 3 * mm
+        if filled:
+            canvas.setFont(FONT_BOLD, 11)
+            canvas.setFillGray(0)
+            canvas.drawString(after, baseline, filled)
+        else:
+            canvas.line(after, baseline - 1.5 * mm, end, baseline - 1.5 * mm)
 
 
 def _draw_footer(canvas: Canvas, puzzle: Puzzle, today: date) -> None:
@@ -152,7 +162,9 @@ def _draw_footer(canvas: Canvas, puzzle: Puzzle, today: date) -> None:
     )
 
 
-def draw_puzzle_page(canvas: Canvas, puzzle: Puzzle, today: date) -> None:
+def draw_puzzle_page(
+    canvas: Canvas, puzzle: Puzzle, today: date, player: str | None = None
+) -> None:
     """One grid, alone on its page, the way it will be handed over."""
     canvas.setFont(FONT_BOLD, 16)
     canvas.setFillGray(0)
@@ -160,7 +172,7 @@ def draw_puzzle_page(canvas: Canvas, puzzle: Puzzle, today: date) -> None:
 
     draw_gauge(canvas, puzzle.rating.level, PAGE_WIDTH / 2, GAUGE_Y)
     draw_grid(canvas, puzzle.board, GRID_LEFT, GRID_BOTTOM, GRID_SIZE)
-    _draw_write_in_line(canvas, NAME_Y)
+    _draw_write_in_line(canvas, NAME_Y, player)
     _draw_footer(canvas, puzzle, today)
 
 
@@ -169,15 +181,22 @@ SOLUTION_SIZE = 70 * mm
 SOLUTION_COLUMNS = 2
 
 
-def draw_solution_pages(canvas: Canvas, puzzles: Sequence[Puzzle]) -> None:
-    """Every solution, six to a page, tagged so they can be matched back."""
+def draw_solution_pages(
+    canvas: Canvas, puzzles: Sequence[Puzzle], *, first_page: bool = False
+) -> None:
+    """Every solution, six to a page, tagged so they can be matched back.
+
+    ``first_page`` says the canvas is still blank, so the first page break is
+    skipped — otherwise the document would open on an empty sheet.
+    """
     gap_x = (PAGE_WIDTH - SOLUTION_COLUMNS * SOLUTION_SIZE) / (SOLUTION_COLUMNS + 1)
     top = 258 * mm
     gap_y = 12 * mm
     caption = 7 * mm
 
-    for start in range(0, len(puzzles), SOLUTIONS_PER_PAGE):
-        canvas.showPage()
+    for page, start in enumerate(range(0, len(puzzles), SOLUTIONS_PER_PAGE)):
+        if page or not first_page:
+            canvas.showPage()
         canvas.setFont(FONT_BOLD, 14)
         canvas.setFillGray(0)
         canvas.drawCentredString(PAGE_WIDTH / 2, 272 * mm, "Solutions")
@@ -207,7 +226,7 @@ def draw_solution_pages(canvas: Canvas, puzzles: Sequence[Puzzle]) -> None:
             )
 
 
-def draw_cover_page(canvas: Canvas, cover: Cover, today: date) -> None:
+def draw_cover_page(canvas: Canvas, cover: Cover, today: date, player: str | None = None) -> None:
     """Front page of a booklet, with a line for the owner to claim it."""
     # Sits a little above the geometric centre, where a title block reads as
     # centred rather than as having slipped down the page.
@@ -231,12 +250,13 @@ def draw_cover_page(canvas: Canvas, cover: Cover, today: date) -> None:
     label = "Carnet de :"
     label_x = GRID_LEFT + 30 * mm
     canvas.drawString(label_x, 128 * mm, label)
-    canvas.line(
-        label_x + canvas.stringWidth(label, FONT, 14) + 4 * mm,
-        126.5 * mm,
-        GRID_LEFT + GRID_SIZE - 30 * mm,
-        126.5 * mm,
-    )
+    after = label_x + canvas.stringWidth(label, FONT, 14) + 4 * mm
+    if player:
+        canvas.setFont(FONT_BOLD, 18)
+        canvas.setFillGray(0)
+        canvas.drawString(after, 128 * mm, player)
+    else:
+        canvas.line(after, 126.5 * mm, GRID_LEFT + GRID_SIZE - 30 * mm, 126.5 * mm)
 
     canvas.setFont(FONT, 9)
     canvas.setFillGray(0.5)
@@ -256,6 +276,7 @@ class PdfRenderer(Renderer):
         *,
         solutions: bool = False,
         cover: Cover | None = None,
+        player: str | None = None,
     ) -> None:
         if not puzzles:
             raise ValueError("aucune grille à rendre")
@@ -265,14 +286,33 @@ class PdfRenderer(Renderer):
         canvas.setSubject(f"{len(puzzles)} grille(s)")
 
         if cover:
-            draw_cover_page(canvas, cover, self.today)
+            draw_cover_page(canvas, cover, self.today, player)
 
         for position, puzzle in enumerate(puzzles):
             if position or cover:
                 canvas.showPage()
-            draw_puzzle_page(canvas, puzzle, self.today)
+            draw_puzzle_page(canvas, puzzle, self.today, player)
 
         if solutions:
             draw_solution_pages(canvas, puzzles)
 
+        canvas.save()
+
+    def render_solutions(
+        self,
+        puzzles: Sequence[Puzzle],
+        path: Path,
+        *,
+        cover: Cover | None = None,
+    ) -> None:
+        if not puzzles:
+            raise ValueError("aucune grille à rendre")
+
+        canvas = Canvas(str(path), pagesize=A4)
+        canvas.setTitle(cover.title if cover else "Solutions")
+        canvas.setSubject(f"solutions de {len(puzzles)} grille(s)")
+
+        # draw_solution_pages opens a page of its own, so nothing is drawn here
+        # first — the leading blank page it would otherwise leave is dropped.
+        draw_solution_pages(canvas, puzzles, first_page=True)
         canvas.save()

@@ -176,12 +176,33 @@ Un carnet monte en difficulté de page en page : les premières grilles mettent 
 dernières font travailler.
 
 ```bash
-uv run sudoku carnet --de 3 --a 6 --nombre 20 --seed 111 -o carnet.pdf
+uv run sudoku carnet --de 3 --a 6 --nombre 20 --joueur "Zoé"
 ```
 
-Il s'ouvre sur une page de garde avec une ligne « Carnet de : » à remplir, et se termine par les
-solutions. Deux carnets tirés avec des seeds différentes n'ont **aucune grille en commun** — de quoi
-en donner un à chaque enfant sans qu'ils tombent sur les mêmes.
+```
+20 grilles, niveaux 3 à 6 → carnet-zoe-20260815-333-fa38.pdf
+  niveau  3 « Facile         »   5 grilles
+  ...
+  solutions → carnet-zoe-20260815-333-fa38-solutions.pdf
+```
+
+**Les solutions sortent dans un document séparé** : le carnet se donne, les réponses restent chez
+l'adulte. `--sans-solutions` supprime le second fichier.
+
+`--joueur` inscrit le nom sur la page de garde et sur chaque feuille, ce qui évite de l'écrire vingt
+fois. Sans lui, la ligne reste vierge.
+
+Deux carnets tirés avec des seeds différentes n'ont **aucune grille en commun** — de quoi en donner
+un à chaque enfant sans qu'ils tombent sur les mêmes.
+
+### Nommage des fichiers
+
+Sans `-o`, le nom se construit tout seul : `carnet-<joueur>-<date>-<seed>-<empreinte>.pdf`.
+
+La date et la seed disent d'où vient un fichier ; l'empreinte finale est un condensé des grilles
+elles-mêmes. Relancer deux fois la même commande retombe donc sur le **même nom** et réécrit un
+fichier identique, tandis que le moindre changement en produit un autre — ce qui garde lisible un
+dossier de carnets de test.
 
 ## Structure
 

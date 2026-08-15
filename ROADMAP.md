@@ -204,3 +204,23 @@ pdftoppm -png -r 110 -f 1 -l 1 illu.pdf docs/apercu
 - **Forcing chains / nice loops** — inutiles : le niveau 10 se définit par l'épuisement du
   catalogue, pas par une technique de plus.
 - **Interface graphique, résolution assistée à l'écran** — le livrable est un PDF à imprimer.
+
+---
+
+## Après coup — retours d'usage
+
+Ajustements demandés après les premiers tests sur papier.
+
+### Carnets, 15/08/2026 ✅
+
+- [x] `--joueur` — nom inscrit sur la page de garde et sur chaque feuille, plutôt qu'une ligne à
+      remplir vingt fois
+- [x] **Solutions dans un document séparé** — le carnet se donne, les réponses restent chez
+      l'adulte. `render_solutions()` s'ajoute à l'interface `Renderer`
+- [x] Nom de fichier unique : `carnet-<joueur>-<date>-<seed>-<empreinte>.pdf`
+
+Sur le nommage, la suggestion initiale était « seed + date + random ». L'empreinte finale est un
+**condensé des grilles** plutôt qu'un tirage aléatoire : relancer la même commande retombe alors sur
+le même nom et réécrit un fichier identique, au lieu d'accumuler des doublons. Le hasard aurait
+garanti l'unicité mais encombré le dossier ; le condensé garantit l'unicité *et* l'idempotence.
+Passer à un tirage aléatoire reste une ligne à changer.

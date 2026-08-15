@@ -34,5 +34,25 @@ class Renderer(ABC):
         *,
         solutions: bool = False,
         cover: Cover | None = None,
+        player: str | None = None,
     ) -> None:
-        """Write ``puzzles`` to ``path``, optionally with a cover and solutions."""
+        """Write ``puzzles`` to ``path``, optionally with a cover and solutions.
+
+        ``player`` fills in the name that would otherwise be left blank — worth
+        it when a booklet is meant for someone in particular, rather than making
+        them write their name twenty times.
+        """
+
+    @abstractmethod
+    def render_solutions(
+        self,
+        puzzles: Sequence[Puzzle],
+        path: Path,
+        *,
+        cover: Cover | None = None,
+    ) -> None:
+        """Write only the solutions, as a document of their own.
+
+        Keeping them apart is what lets the booklet be handed over while the
+        answers stay with whoever is checking.
+        """
