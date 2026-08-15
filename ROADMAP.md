@@ -257,3 +257,44 @@ qu'un fichier de `out/` ne tient qu'à sa seed.
 Points de l'audit **non retenus pour l'instant** : aucun. Deux de ses recommandations relèvent du
 terrain plutôt que du code — valider l'échelle sur les enfants qui utilisent les carnets, et
 accepter que la cohérence interne démontrée ne vaut pas validation empirique.
+
+### Confrontation à des données humaines, 15/08/2026 ✅
+
+Un second audit a signalé la littérature (Pelánek, corrélations 0,88 à 0,95) et surtout un
+**dataset public de difficultés observées sur de vrais joueurs** — 344 grilles avec temps de
+résolution et taux d'abandon. `tools/validate.py` rejoue la confrontation.
+
+- [x] `tools/validate.py` — corrélations de Spearman contre `D_TO` / `D_TR`, modèle combiné en
+      validation croisée, sans aucune dépendance ajoutée
+
+**Ce que l'échantillon dit, par mesure seule (Spearman contre `D_TO`) :**
+
+| mesure | ρ |
+| --- | --- |
+| visibilité (actuelle) | **−0,727** |
+| plafond de technique | +0,671 |
+| dépendance sur 25 coups | −0,693 |
+| part de coups forcés | +0,634 |
+| plus longue chaîne forcée | +0,531 |
+| nombre d'indices | −0,275 |
+
+**Modèle combiné, 5 blocs, hors échantillon : ρ = 0,802.**
+
+**Trois conclusions, dont deux contredisent l'audit :**
+
+1. La visibilité actuelle **tient déjà** : −0,727 contre des temps humains réels. Ce n'était pas
+   établi jusqu'ici.
+2. Le remplacement proposé — modèle « un coup à la fois », `dependency25` — fait **moins bien**
+   (−0,693), et son poids dans le modèle combiné est de −0,057 : il n'apporte rien au-delà de la
+   visibilité. Les chaînes forcées non plus (+0,089).
+3. Ce qui apporte, c'est la **combinaison** : 0,727 → 0,802. Le plafond de technique y pèse +0,859,
+   alors que le calibrage interne l'avait jugé saturé — les deux constats sont vrais dans leur
+   domaine, la saturation ayant été mesurée sur 22-58 indices où l'immense majorité est facile.
+
+> **Réserve décisive, absente des deux audits :** l'échantillon couvre **24 à 32 indices**,
+> médiane 28. Il ne contient **aucune grille des niveaux 1 à 5** — précisément ceux des carnets
+> pour enfants. Recalibrer toute l'échelle dessus échangerait un bas d'échelle validé en interne
+> contre un bas d'échelle extrapolé. Le gain porterait sur les niveaux 6 à 10, pas sur l'usage réel.
+
+Le nombre d'indices à −0,275 confirme la littérature *et* la mesure faite à l'étape 3 : ce n'est
+pas un prédicteur de difficulté.
