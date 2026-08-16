@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sudokus à imprimer</title>
+    <meta
+      name="description"
+      content="Choisir un niveau, tirer des grilles, imprimer le carnet. Dix niveaux de difficulté, les trois plus durs calibrés sur des temps de résolution humains."
+    />
+    <link rel="stylesheet" href="app.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='white'/><path d='M0 5.3h16M0 10.6h16M5.3 0v16M10.6 0v16' stroke='black' stroke-width='1.4'/></svg>"
+    />
+  </head>
+  <body>
+    <header class="bandeau">
+      <h1>Sudokus à imprimer</h1>
+      <p class="chapeau">
+        Une grille par page A4, cases de 20 mm, place pour écrire au crayon.
+        Les solutions partent dans un fichier à part.
+      </p>
+    </header>
+
+    <main>
+      <form id="options" class="panneau">
+        <fieldset class="champ">
+          <legend>Ce qu'on imprime</legend>
+          <div class="bascule" role="radiogroup" aria-label="Type de tirage">
+            <label>
+              <input type="radio" name="mode" value="niveau" checked />
+              <span>Des grilles d'un même niveau</span>
+            </label>
+            <label>
+              <input type="radio" name="mode" value="carnet" />
+              <span>Un carnet qui monte en difficulté</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="champ" id="champ-niveau">
+          <legend>Niveau</legend>
+          <div id="niveaux" class="niveaux"></div>
+          <label class="case">
+            <input type="checkbox" id="montrer-dix" />
+            <span>Montrer le niveau 10, hors catalogue</span>
+          </label>
+        </fieldset>
+
+        <fieldset class="champ" id="champ-carnet" hidden>
+          <legend>Progression</legend>
+          <div class="paire">
+            <label>Du niveau <select id="de"></select></label>
+            <label>au niveau <select id="a"></select></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="champ">
+          <legend>Combien</legend>
+          <label class="ligne">
+            <input type="number" id="nombre" min="1" max="100" value="1" />
+            <span id="nombre-mot">grille</span>
+          </label>
+        </fieldset>
+
+        <fieldset class="champ">
+          <legend>Pour qui</legend>
+          <label class="ligne">
+            <input
+              type="text"
+              id="joueur"
+              placeholder="Prénom (facultatif)"
+              autocomplete="off"
+              maxlength="24"
+            />
+          </label>
+          <p class="note">
+            Imprimé sur chaque feuille. Il reste sur cet ordinateur : ni envoyé,
+            ni mis dans le lien.
+          </p>
+        </fieldset>
+
+        <div class="actions">
+          <button type="button" id="tirer" class="principal">Nouveau tirage</button>
+          <a id="telecharger" class="bouton" download>Télécharger</a>
+          <button type="button" id="telecharger-solutions" class="discret">Solutions</button>
+        </div>
+
+        <p class="note" id="etat" role="status" aria-live="polite"></p>
+
+        <details class="replis">
+          <summary>Grilles déjà imprimées</summary>
+          <p class="note" id="deja"></p>
+          <button type="button" id="oublier" class="lien">Repartir de zéro</button>
+        </details>
+      </form>
+
+      <section class="apercu" aria-label="Aperçu du document">
+        <iframe id="visionneuse" title="Aperçu du PDF"></iframe>
+        <p class="note repli-mobile">
+          L'aperçu ne s'affiche pas sur tous les téléphones — le téléchargement,
+          lui, fonctionne partout.
+        </p>
+      </section>
+    </main>
+
+    <footer class="pied">
+      <p id="banque"></p>
+      <p>
+        Grilles produites et classées par
+        <a href="https://github.com/Aytan-sudo/sudoku-generator">sudoku-generator</a>.
+        Les niveaux 7 à 9 sont calibrés sur des temps de résolution humains réels ;
+        le niveau 10 sort du catalogue de techniques.
+      </p>
+    </footer>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
