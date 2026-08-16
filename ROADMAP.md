@@ -316,3 +316,20 @@ générateur sur chaque grille candidate — +0,024 ne le justifiait pas.
 
 La discrétisation en trois paliers explique l'écart entre 0,728 (score continu) et 0,669 (niveau
 attribué) : trois seaux ne peuvent pas restituer toute la résolution d'un score continu.
+
+### Banque JSON pour un site statique, 16/08/2026 ✅
+
+- [x] `sudoku export --de --a --par-niveau --seed --lisible -o`
+- [x] Format décrit par des `TypedDict` — contrat explicite avec le consommateur
+- [x] Métadonnées des niveaux embarquées, pour que le site ne code aucun libellé en dur
+- [x] Tests : forme, unicité de chaque grille exportée, solution cohérente, reproductibilité
+
+GitHub Pages n'exécute rien : la génération et le classement restent en Python, le site pioche.
+Écarté d'emblée — porter le générateur en JavaScript, qui dupliquerait le modèle de difficulté et
+le ferait diverger du seul exemplaire calibré ; et Pyodide, qui coûte ~10 Mo avant la première
+grille.
+
+Environ **270 Ko pour 1 000 grilles**, ~105 Ko en gzip.
+
+`--format json` n'a pas été ajouté à `generate` ni à `carnet` : ces commandes rendent des documents,
+l'export produit des données. La combinaison aurait été proposable sans rendu correspondant.

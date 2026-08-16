@@ -222,6 +222,41 @@ La commande récapitule ce qu'elle a produit :
 `--seed` rejoue un lot entier à l'identique. Chaque grille porte en plus **sa propre seed** en pied
 de page : elle peut être régénérée seule, indépendamment du lot dont elle est issue.
 
+### Banque JSON
+
+Pour alimenter un site statique — GitHub Pages n'exécute pas de Python — la génération et le
+classement restent ici, où ils sont testés et calibrés, et le site n'a plus qu'à piocher.
+
+```bash
+uv run sudoku export --de 1 --a 10 --par-niveau 100
+```
+
+```json
+{
+  "version": "0.1.0",
+  "generated": "2026-08-16",
+  "seed": 42,
+  "levels": [{ "number": 1, "name": "Découverte" }, ...],
+  "puzzles": [
+    {
+      "id": "118da63e",
+      "level": 1,
+      "givens": 52,
+      "seed": 165578901,
+      "puzzle": "5.682.9.4..27.51.68...",
+      "solution": "536821974942735186817..."
+    }
+  ]
+}
+```
+
+Les noms de niveaux voyagent avec les grilles : le site n'a rien à coder en dur. Compter environ
+**270 Ko pour 1 000 grilles**, soit ~105 Ko une fois servi en gzip. `--lisible` indente le JSON au
+prix de la taille, `--seed` rend la banque reproductible.
+
+Le format est décrit par des `TypedDict` dans `cli.py` — c'est un contrat avec ce qui le consomme,
+et un site statique n'a aucun moyen de demander au générateur ce qu'il voulait dire.
+
 ### Carnets
 
 Un carnet monte en difficulté de page en page : les premières grilles mettent en confiance, les
