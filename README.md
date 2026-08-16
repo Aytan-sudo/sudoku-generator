@@ -305,6 +305,68 @@ elles-mêmes. Relancer deux fois la même commande retombe donc sur le **même n
 fichier identique, tandis que le moindre changement en produit un autre — ce qui garde lisible un
 dossier de carnets de test.
 
+## Le site
+
+`site/` est une page statique qui choisit un niveau, tire des grilles et écrit le PDF —
+l'équivalent web des carnets, sans rien à installer pour celui qui imprime. Ni cadriciel, ni étape
+de construction : des modules ES servis tels quels.
+
+### Publier
+
+```bash
+uv run sudoku export --de 1 --a 10 --par-niveau 2000 --seed 42 -o out/banque.json
+uv run python tools/publish.py out/banque.json
+tools/deploy.sh
+```
+
+`publish.py` découpe la banque en **paquets de 500 grilles d'un même niveau**, chacun doublé d'un
+fichier de solutions. Le site lit l'index, tire un paquet, et n'en charge pas d'autre : imprimer
+une grille coûte une vingtaine de kilo-octets, que la banque en contienne cinq mille ou deux cent
+mille. Les solutions ne sont demandées que si un adulte clique pour les avoir.
+
+Vingt mille grilles pèsent 4,5 Mo, 1,8 Mo en gzip. Elles ne sont pas versionnées : cinq mégaoctets
+de JSON régénérable resteraient dans l'historique à chaque tirage, donc `deploy.sh` les envoie
+directement sur `gh-pages`, dont l'historique tient en un commit écrasé à chaque publication.
+
+### Le PDF est écrit à la main
+
+Le site n'imprime pas la page du navigateur : il produit un vrai PDF, qu'il affiche ensuite dans
+une visionneuse. L'aperçu est donc le document, à l'octet près, et aucun réglage du dialogue
+d'impression — marges, échelle, en-têtes — ne peut déformer une case de 20 mm.
+
+C'est possible sans dépendance parce que la feuille ne contient que des traits, des cercles et du
+texte en Helvetica, l'une des quatorze polices que tout lecteur de PDF possède : rien à embarquer.
+`site/js/pdf.js` fait deux cents lignes, contre les cent cinquante kilo-octets gzippés d'une
+bibliothèque — quatre fois la banque chargée pour imprimer la première grille.
+
+### Ce qui existe en deux exemplaires
+
+La feuille est dessinée deux fois, ici en Python et là en JavaScript, et deux implémentations d'une
+même règle dérivent en silence. Trois garde-fous :
+
+| Ce qui pourrait diverger | Ce qui l'en empêche |
+| --- | --- |
+| Les millimètres de la feuille | `tests/test_site.py` évalue `layout.js` et le compare à `render/pdf.py`, constante par constante — y compris celles ajoutées depuis |
+| La rampe des carnets | `tools/fixtures.py` fige les réponses du Python, la suite JavaScript doit les rendre |
+| Les largeurs de caractères | `tools/metrics.py` les tire des tables d'Adobe via ReportLab ; un test refuse le fichier périmé |
+
+Et pour ce qu'aucun test ne voit — que la feuille *ressemble* aux carnets déjà imprimés :
+
+```bash
+uv run python tools/compare_render.py
+```
+
+Les deux rendus sont produits pour les mêmes grilles, puis comparés pixel par pixel. Ils
+coïncident : l'écart maximal est de 8 sur 255, sur l'anticrénelage des cercles de la jauge, qui
+sont quatre courbes de Bézier d'un côté et un arc véritable de l'autre.
+
+### En local
+
+```bash
+python3 -m http.server 8765 --directory site   # puis http://localhost:8765
+cd site && node --test                         # la suite JavaScript
+```
+
 ## Structure
 
 ```
@@ -318,8 +380,24 @@ src/sudoku/
 ├── render/        interface Renderer, sortie PDF (ReportLab) et texte
 └── cli.py
 tools/
-├── calibrate.py     mesure ce qui varie avec la difficulté
-└── find_fixtures.py cherche une grille par technique
+├── calibrate.py       mesure ce qui varie avec la difficulté
+├── find_fixtures.py   cherche une grille par technique
+├── validate.py        confronte le classement à des joueurs réels
+├── publish.py         découpe la banque en paquets pour le site
+├── metrics.py         fige les largeurs de police dont le site a besoin
+├── fixtures.py        fige les réponses que le port JavaScript doit rendre
+├── compare_render.py  compare les deux rendus, pixel par pixel
+└── deploy.sh          publie site/ sur gh-pages, en un commit
+site/
+├── index.html, app.css
+├── js/layout.js     les millimètres, transcrits de render/pdf.py
+├── js/pdf.js        écrivain PDF minimal, sans dépendance
+├── js/sheet.js      la feuille A4, transcrite fonction pour fonction
+├── js/bank.js       index et paquets, chargés à la demande
+├── js/draw.js       la rampe et le tirage sans doublon
+├── js/rng.js        un hasard semé, donc rejouable
+├── js/state.js      l'URL, et ce qui reste sur la machine
+└── tests/           node --test, sans dépendance non plus
 ```
 
 ## Performance

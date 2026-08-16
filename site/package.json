@@ -1,0 +1,9 @@
+{
+  "name": "sudoku-site",
+  "private": true,
+  "type": "module",
+  "description": "Déclare les modules ES pour Node, qui fait tourner les tests. Le site lui-même n'a ni dépendance ni étape de construction : les fichiers sont servis tels quels.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

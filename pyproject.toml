@@ -46,6 +46,11 @@ select = [
     "RUF",
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["sudoku", "tools"]
+# `tools/` n'est pas un paquet installé : sans cette ligne, un script d'outillage
+# importé par un test passerait pour une dépendance tierce.
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

@@ -36,3 +36,19 @@ jobs:
 
       - name: Tests
         run: uv run pytest
+
+  site:
+    runs-on: ubuntu-latest
+    name: site (javascript)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Aucune dépendance à installer : le site n'en a pas, et les tests
+      # tournent sur le lanceur intégré à Node.
+      - name: Tests
+        run: node --test
+        working-directory: site

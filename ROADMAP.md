@@ -333,3 +333,41 @@ Environ **270 Ko pour 1 000 grilles**, ~105 Ko en gzip.
 
 `--format json` n'a pas été ajouté à `generate` ni à `carnet` : ces commandes rendent des documents,
 l'export produit des données. La combinaison aurait été proposable sans rendu correspondant.
+
+### Site d'impression sur GitHub Pages, 16/08/2026 ✅
+
+- [x] `tools/publish.py` — banque découpée en paquets de 500 grilles d'un même niveau, solutions
+      dans des fichiers à part, plus un index
+- [x] `site/js/pdf.js` — écrivain PDF sans dépendance, Helvetica étant une des quatorze polices de
+      base : rien à embarquer
+- [x] `site/js/sheet.js` — la feuille de `render/pdf.py`, transcrite fonction pour fonction
+- [x] Tirage semé et rejouable, rampe portée, grilles déjà imprimées écartées via `localStorage`
+- [x] Tests : 47 côté JavaScript (`node --test`, sans dépendance), 15 côté Python pour ce que le
+      site emprunte au générateur
+- [x] `tools/compare_render.py` — les deux rendus comparés pixel par pixel
+
+**Le coût d'une impression ne dépend plus de la taille de la banque.** Un paquet par niveau et par
+carnet : 2 Ko d'index plus 20 Ko de paquet, que la banque tienne 5 000 grilles ou 200 000. Les
+20 000 publiées pèsent 4,5 Mo, 1,8 Mo en gzip.
+
+Séparer les solutions des grilles divise par deux le premier chargement — 45 Ko gzip pour une
+banque complète de 500, 24 Ko pour les grilles seules — et met « les solutions restent chez
+l'adulte » dans la couche fichiers plutôt que dans l'interface.
+
+Écarté : compacter en solution + masque des indices. Mesuré à 34 Ko contre 45 sur le brut, mais le
+base64 ressemble à du bruit pour gzip et le découpage fait mieux pour moins cher.
+
+Écarté aussi : générer la banque en CI à chaque déploiement. Cela n'achetait que le reclassement
+automatique d'une banque qu'on régénère délibérément, contre une chaîne uv et sept minutes par
+push. La banque se fabrique sur le poste et part sur `gh-pages`, dont l'historique tient en un
+commit — sans quoi cinq mégaoctets de JSON généré s'ajouteraient au dépôt à chaque tirage.
+
+L'impression du navigateur a été écartée au profit d'un vrai PDF : le dialogue d'impression ajoute
+des en-têtes et une échelle « ajuster à la page » qu'aucune feuille de style ne peut désarmer, et
+une case de 20 mm ne survit pas à ça. L'aperçu affiché est le fichier lui-même, il n'y a donc qu'un
+seul moteur de rendu dans le site.
+
+La feuille existe désormais en deux exemplaires, ce qui est le vrai coût de la décision. Trois
+garde-fous la tiennent : les constantes de `layout.js` sont comparées à celles de `render/pdf.py`,
+la rampe est confrontée à des vecteurs figés depuis le Python, et les largeurs de police sont
+générées plutôt que recopiées.

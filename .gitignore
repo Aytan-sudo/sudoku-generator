@@ -21,6 +21,11 @@ htmlcov/
 *.pdf
 out/
 
+# La banque découpée pour le site : cinq mégaoctets de JSON régénérable, qui
+# resteraient dans l'historique à chaque nouveau tirage. Elle part directement
+# sur la branche de publication, par tools/deploy.sh.
+site/banque/
+
 # macOS
 .DS_Store
 
